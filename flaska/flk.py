@@ -25,7 +25,7 @@ def root():
 @app.route("/depth_map/")
 def depth_map():
     return render_template("map.html",
-                           urls=Urls())
+                           urls=Urls(app))
 
 @app.route("/depth_data/")
 def depth_data():

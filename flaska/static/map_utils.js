@@ -203,7 +203,7 @@ function loadMap() {
     script.type = "text/javascript";
     script.src = "http://maps.googleapis.com/maps/api/js?" +
         "v=3.10&" +
-        "key=AIzaSyDrJT-_kUoG5AZN6d6ZnsacHucxKLAr7wk" +
+        "key=" + mapsKey +
         "&sensor=false&callback=initialize";
     document.body.appendChild(script);
 
