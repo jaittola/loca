@@ -34,10 +34,11 @@ BEGIN
                                              pos.longitude,
                                              range.range);
 
+            -- Note, this does an update to all depth
+            -- data within the area.
             UPDATE depth
                 SET display_range = range.range
-                WHERE depth_id = min_depth_id
-                AND position_id = pos.position_id;
+                WHERE depth_id = min_depth_id;
 
             prev_lat := pos.latitude;
             prev_lon := pos.longitude;
