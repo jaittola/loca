@@ -1,7 +1,27 @@
 var map = null;
-var depthDataPoints = [];
-var theRoute = null;
+
+// State variable to prevent fetching new data points all the time
+// while moving or zooming the map.
 var dragging = false;
+
+// PolyLine
+var theRoute = null;
+
+// Markers
+var depthDataPoints = [];
+
+// The heatmap.
+var heatmap = null;
+
+// Max depth for the heatmap (meters)
+var heatmapMaxDepth = 40;
+
+// Two-part color scale in the gradient. Here's the split.
+var heatmapSplit = 10;
+
+// This is a function actually. We use a variable for now to select
+// the depth map display mode.
+var fetchDepths = null;
 
 function getDepthDataUrl(bounds) {
     var neCorner = bounds.getNorthEast();
@@ -20,23 +40,60 @@ function getDepthDataUrl(bounds) {
         "&mPerPix=" + mPerPix;
 }
 
-var depthColors = [
-    [2, "#FF0000"],
-    [5, "#FF69B4"],
-    [10, "#FFB6C1"],
-    [15, "#8A2BE2"],
-    [20, "#4169E1"],
-    [30, "#87CEFA"],
-    [0, "#7CFC00"]  // Deeper than all above.
+var depthGradient = [
+    "rgba(0, 0, 0, 0)"
 ];
+
+function linearInterpolation(loop, maxLoop, start, end) {
+    return ((loop / maxLoop) * (end - start)) + start;
+}
+
+function makeDepthGradient() {
+
+    // We make a gradient in HSV.
+    // Sat and Value stay constant in the
+    // gradient and we change the color only.
+
+    var sat = 100;
+    var value = 100;
+    var red = hsvToRgb(0, 100, 100);
+
+    // First slot was set to zero in the initialization. It also has
+    // alpha set to zero so that the heatmap shows nothing if there
+    // are no measurements at a particular coordinate.
+
+    // 1st part: Start form red and end with green.
+    var startHue1 = 0;
+    var endHue1 = 120;
+
+    // 2nd part: end with blue.
+    var endHue2 = 240;
+
+    var i;
+
+    for (var i = 0; i < heatmapSplit; ++i) {
+        depthGradient.push(hsvToRgb(linearInterpolation(i, heatmapSplit,
+                                                        startHue1, endHue1),
+                                    sat, value));
+    }
+    for (; i < heatmapMaxDepth; ++i) {
+        depthGradient.push(hsvToRgb(linearInterpolation(i, heatmapMaxDepth,
+                                                        endHue1, endHue2),
+                                    sat, value));
+    }
+
+    console.log("DepthGradient has " + depthGradient.length +
+                " entries and is " + depthGradient);
+}
 
 function depthLegendId(cell) {
     return "depthLegendCell_" + cell;
 }
 
 function depthFigure(depth) {
-    if (depth == 0) {
-        return "";
+    var frac = Math.floor(depth % 5.0);
+    if (0 != frac) {
+        return ""
     }
 
     return depth;
@@ -48,45 +105,55 @@ function makeDepthLegend() {
     // This function creates a table with the depth ranges. The color
     // of the depth range is on the background of each cell.
 
-    // Construct a table of the depth ranges.
-    for (var i = 0; i < depthColors.length; ++i) {
+    // First, we construct a table of the depth ranges.
+    for (var i = 0; i < depthGradient.length; ++i) {
         cells = cells +
             "<td id=\"" + depthLegendId(i) + "\">" +
-            depthFigure(depthColors[i][0]) + "</td>";
+            depthFigure(i) + "</td>";
     }
 
     var tablestring =
-        // "<p id=\"depth_legend_table_p\">" +
         "<table id=\"depth_legend_table\">" +
         "<tbody><tr>" +
         "<td>Depth legend (m):</td>" +
         cells +
-        "</tr></tbody></table>"
-        // + "</p>";
-        ;
+        "</tr></tbody></table>";
 
     // Add the depth range table to the document.
     $("#depth_legend").append(tablestring);
 
-    // Add colors depth ranges to the css.
-    for (var i = 0; i < depthColors.length; ++i) {
-        $("#" + depthLegendId(i)).css({"background-color": depthColors[i][1],
-                                       "width": "3em",
+    // Add colors of the depth ranges to the css.  We use the same
+    // gradient that gets supplied to the heat map, but we skip the
+    // first column (which is transparent and has no color), and put
+    // the second field of the gradient there twice.
+
+    // First column
+    $("#" + depthLegendId(0)).css({"background-color": depthGradient[1],
+                                   "width": "1em",
+                                   "text-align": "right"});
+
+    // Other columns.
+    for (var i = 1; i < depthGradient.length; ++i) {
+        $("#" + depthLegendId(i)).css({"background-color": depthGradient[i],
+                                       "width": "1em",
                                        "text-align": "right"});
     }
 }
 
 function getColor(depth) {
-    var i;
+    roundedDepth = Math.ceil(depth);
 
-    for (i = 0; i < depthColors.length - 1; ++i) {
-        if (depth < depthColors[i][0]) {
-            return depthColors[i][1];
-        }
+    if (roundedDepth < 1) {
+        // Minimum used is always 1 if there is a measurement.
+        return depthColors[1];
     }
 
-    // We ran to the end.
-    return depthColors[i][1];
+    if (roundedDepth >= depthGradient.length) {
+        // Max value if depth goes over the edge.
+        return depthGradient[depthGradient.length - 1];
+    }
+
+    return depthGradient[roundedDepth];
 }
 
 function queryDepthData(itemCallback) {
@@ -101,9 +168,37 @@ function queryDepthData(itemCallback) {
 }
 
 /**
+ * Show the depths with a heatmap layer on the map.
+ */
+function fetchDepthsToHeatmap() {
+    var heatmapDataPoints = []
+
+    if (null == heatmap) {
+        heatmap = new google.maps.visualization.HeatmapLayer({
+            data: heatmapDataPoints,
+            opacity: 1,
+            radius: 1,
+            maxIntensity: heatmapMaxDepth,
+            map: map,
+            gradient: depthGradient
+        });
+    }
+
+    queryDepthData(function(depthData) {
+        $.each(depthData.depths, function(i, measurement) {
+            heatmapDataPoints.push({
+                location: new google.maps.LatLng(measurement.latitude,
+                                                 measurement.longitude),
+                weight: measurement.depth });
+        });
+        heatmap.setData(heatmapDataPoints);
+    });
+}
+
+/**
  * Show the depths with markers on the map.
  */
-function fetchDepths() {
+function fetchDepthsWithMarkers() {
     // TODO, fix this. We should not remove items from the map if they are
     // already in the viewpoint.
     for (var i = 0; i < depthDataPoints.length; ++i) {
@@ -184,6 +279,9 @@ function dragEnd() {
 }
 
 function initialize() {
+    fetchDepths = fetchDepthsWithMarkers;
+    // fetchDepths = fetchDepthsToHeatmap;
+
     var mapOptions = {
         zoom: 12,
         scaleControl: true,
@@ -204,8 +302,11 @@ function loadMap() {
     script.src = "http://maps.googleapis.com/maps/api/js?" +
         "v=3.10&" +
         "key=" + mapsKey +
-        "&sensor=false&callback=initialize";
+        "&sensor=false" +
+        "&libraries=visualization" +
+        "&callback=initialize";
     document.body.appendChild(script);
 
+    makeDepthGradient();
     makeDepthLegend();
 }
