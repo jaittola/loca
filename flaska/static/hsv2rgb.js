@@ -2,6 +2,8 @@
  * With modifications from
  * http://snipplr.com/view.php?codeview&id=14590
  *
+ * Original module comment below:
+ *
  * * HSV to RGB color conversion
  * *
  * * H runs from 0 to 360 degrees
@@ -10,7 +12,6 @@
  * * Ported from the excellent java algorithm by Eugene Vishnevsky at:
  * * http://www.cs.rit.edu/~ncs/color/t_convert.html
  */
-
 
 /**
  * Translate a float value between 0 - 1.0 to a hexadecimal number
