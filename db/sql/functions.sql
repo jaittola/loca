@@ -71,11 +71,11 @@ get_min_depth_id(center_latitude DOUBLE PRECISION,
 RETURNS INTEGER
 AS $$
     WITH depths AS (SELECT depth_id,
-                       depth,
-                       row_number() OVER (ORDER BY depth) AS rnum
-                FROM depth
-                WHERE position_id IN (SELECT * FROM
-                                        get_positions_in_area($1, $2, $3)))
+                    depth,
+                    row_number() OVER (ORDER BY depth) AS rnum
+                    FROM depth
+                    WHERE position_id IN (SELECT * FROM
+                                          get_positions_in_area($1, $2, $3)))
     SELECT depth_id FROM depths WHERE rnum = 1;
 $$
 LANGUAGE SQL;

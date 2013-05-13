@@ -1,7 +1,11 @@
 
+DELETE FROM display_ranges;
+
+SELECT calc_vis_range(2);
 SELECT calc_vis_range(4);
-SELECT calc_vis_range(8);
-SELECT calc_vis_range(18);
+SELECT calc_vis_range(9);
+SELECT calc_vis_range(19);
 SELECT calc_vis_range(38);
-SELECT calc_vis_range(70);
-SELECT calc_vis_range(140);
+SELECT calc_vis_range(76);
+SELECT calc_vis_range(152);
+SELECT calc_vis_range(304);

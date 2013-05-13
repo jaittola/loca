@@ -29,6 +29,9 @@ def writeout(s):
     end_tx()
 
 def fl_coord(coordstr, hemisphere, neg_hemisphere, deg_nums=2):
+    if len(coordstr) < deg_nums:
+        return None
+
     # Translate the DDMM.xxx value to a floating point degree value.
     value = float(coordstr[0:deg_nums]) + float(coordstr[deg_nums:]) / 60.0
     if hemisphere == neg_hemisphere:
@@ -52,10 +55,11 @@ def writeout_coords(fields, input_date):
     lat = fl_coord(fields[1], fields[2], "S")
     lon = fl_coord(fields[3], fields[4], "W", deg_nums=3)
 
-    writeout("INSERT INTO position (pos_time_utc, latitude, longitude) "
-             "VALUES ({0}, {1}, {2});".format(datestamp,
-                                              lat, lon))
-    coords_written += 1
+    if lat is not None and lon is not None:
+        writeout("INSERT INTO position (pos_time_utc, latitude, longitude) "
+                 "VALUES ({0}, {1}, {2});".format(datestamp,
+                                                  lat, lon))
+        coords_written += 1
 
 def writeout_depth(fields):
     if len(fields) < 5:
@@ -74,6 +78,23 @@ def writeout_depth(fields):
              "SELECT COALESCE(MAX(POSITION_ID), -1), {0} "
              "FROM POSITION;".format(depth))
 
+def read_input(input, input_date):
+    linenum = 0
+
+    try:
+        for line in input:
+            linenum += 1
+            fields = line.split(",")
+            if len(fields) < 1:
+                continue
+
+            if fields[0] == "$GPGLL":
+                writeout_coords(fields, input_date)
+            elif fields[0] == "$IIDBT":
+                writeout_depth(fields)
+    except Exception,ex:
+        sys.stderr.write("Failure on line {0}\n".format(linenum));
+        raise
 
 def main():
     if len(sys.argv) != 3:
@@ -84,16 +105,11 @@ def main():
     input_date = sys.argv[2]
 
     try:
-        with open(input_file) as input:
-            for line in input:
-                fields = line.split(",")
-                if len(fields) < 1:
-                    continue
-
-                if fields[0] == "$GPGLL":
-                    writeout_coords(fields, input_date)
-                elif fields[0] == "$IIDBT":
-                    writeout_depth(fields)
+        if input_file == "-":
+            read_input(sys.stdin, input_date)
+        else:
+            with open(input_file) as input:
+                read_input(input, input_date)
 
     except IOError,ioe:
         sys.stderr.write("Loading data failed: {0}\n".format(ioe));

@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS position (
    longitude DOUBLE PRECISION
 );
 
-CREATE INDEX IF NOT EXISTS position_range_idx ON position (latitude, longitude);
+DROP INDEX IF EXISTS position_range_idx;
+CREATE INDEX position_range_idx ON position (latitude, longitude);
 
 CREATE TABLE IF NOT EXISTS speed (
    speed_id SERIAL PRIMARY KEY,
@@ -36,7 +37,8 @@ CREATE TABLE IF NOT EXISTS depth (
    display_range INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE INDEX IF NOT EXISTS depth_pos_id_idx ON depth (position_id);
+DROP INDEX IF EXISTS depth_pos_id_idx;
+CREATE INDEX depth_pos_id_idx ON depth (position_id);
 
 CREATE TABLE IF NOT EXISTS display_ranges (
    range INTEGER PRIMARY KEY,
