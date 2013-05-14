@@ -1,13 +1,15 @@
 
-from flask import g, request, Response
 import json
+
+from flask import g, request, Response
+from flask_login import login_required
 
 from depth_data import db_conn, db_disconn
 from depth_data import db_depths_fetch
 from flaska import app
-from flaska.urls import Urls
 
 @app.route("/api/1/depth_data/")
+@login_required
 def depth_data():
     coord_range = fetch_coord_range()
     depths = db_depths_fetch(g.db,

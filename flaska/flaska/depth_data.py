@@ -45,3 +45,13 @@ def db_depths_fetch(db, coord_range, m_per_pix):
     cur.close()
 
     return depths
+
+def db_load_user(db, userid):
+    cur = db.cursor()
+    cur.execute("SELECT user_id, auth_token FROM users WHERE user_id = %s",
+                (userid, ))
+
+    userdata = cur.fetchone()
+    if userdata is None:
+        return None
+    return { "user_id" : userdata[0], "auth_token": userdata[1] }

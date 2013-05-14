@@ -45,3 +45,8 @@ CREATE TABLE IF NOT EXISTS display_ranges (
    lat_range DOUBLE PRECISION,
    lon_range DOUBLE PRECISION
 );
+
+CREATE TABLE IF NOT EXISTS users (
+   user_id TEXT PRIMARY KEY,
+   auth_token TEXT
+);

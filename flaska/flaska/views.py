@@ -1,14 +1,20 @@
 
-from flask import render_template, redirect, url_for
+from flask import render_template, redirect, url_for, request
+from flask_login import login_required
 
 from flaska import app
-from urls import Urls
+from flaska.template_data import TemplateVars
 
 @app.route("/")
 def root():
     return redirect(url_for("depth_map"))
 
-@app.route("/views/depth_map/")
+@app.route("/depth_map/")
+@login_required
 def depth_map():
     return render_template("map.html",
-                           urls=Urls(app))
+                           vars=TemplateVars(app))
+
+@app.route("/unauthorized")
+def unauthorized_user():
+    return render_template("unauthorized.html")

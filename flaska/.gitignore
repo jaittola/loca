@@ -1,3 +1,4 @@
 *.pyc
 local-settings
 local-settings/*
+*~
