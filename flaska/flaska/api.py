@@ -5,7 +5,7 @@ from flask import g, request, Response
 from flask_login import login_required
 
 from depth_data import db_conn, db_disconn
-from depth_data import db_depths_fetch
+from depth_data import db_depths_fetch, db_triplist_fetch
 from flaska import app
 
 @app.route("/api/1/depth_data/")
@@ -15,9 +15,7 @@ def depth_data():
     depths = db_depths_fetch(g.db,
                              coord_range,
                              request.args.get("mPerPix", default=0, type=float))
-    return Response(json.dumps({ "depths": depths }),
-                    status=200,
-                    mimetype="application/json")
+    return json_response({ "depths": depths })
 
 @app.route("/api/1/trip/<int:trip_id>")
 def trip(trip_id):
@@ -25,7 +23,13 @@ def trip(trip_id):
 
 @app.route("/api/1/trips/")
 def list_trips():
-    return "Trip list"
+    triplist = db_triplist_fetch(g.db)
+    return json_response({"trips": triplist})
+
+def json_response(json_content, status=200):
+    return Response(json.dumps(json_content, ensure_ascii=False),
+                    status=status,
+                    mimetype="application/json")
 
 def fetch_coord_range():
     """

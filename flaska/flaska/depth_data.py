@@ -40,13 +40,34 @@ def db_depths_fetch(db, coord_range, m_per_pix):
                 (coord_range["lat0"], coord_range["lat1"],
                  coord_range["lon0"], coord_range["lon1"],
                  m_per_pix))
-
     depths = cur.fetchall()
-
     db.commit()
     cur.close()
 
     return depths
+
+def db_triplist_fetch(db):
+    """
+    Fetch a list of all trips from the database.
+
+    Return most recent first.
+    """
+    cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute("SELECT "
+                "t.id AS trip_id, "
+                "t.trip_name AS trip_name, "
+                "to_char(t.trip_date, 'YYYYMMDD') AS trip_date, "
+                "t.vessel_name AS vessel_name, "
+                "u.user_email AS user_email "
+                "FROM trip t "
+                "JOIN users u "
+                "ON t.user_id = u.id "
+                "ORDER BY t.trip_date DESC")
+    trips = cur.fetchall()
+    db.commit()
+    cur.close()
+
+    return trips
 
 def db_load_user(db, userid):
     cur = db.cursor()
