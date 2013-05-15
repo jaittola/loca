@@ -6,8 +6,8 @@ from flaska.depth_data import db_load_user
 from flaska.depth_data import db_conn, db_disconn
 
 class User:
-    def __init__(self, userid, access_token = None):
-        self.user_id = userid
+    def __init__(self, user_email, access_token = None):
+        self.user_email = user_email
         self.access_token = access_token
 
         self.user_is_authenticated = False
@@ -25,7 +25,10 @@ class User:
         return False
 
     def get_id(self):
-        return self.user_id
+        return self.user_email
+
+    def get_email(self):
+        return self.user_email
 
     def set_access_token(self, token):
         self.access_token = token
@@ -34,7 +37,7 @@ class User:
         return self.access_token
 
     def __repr__(self):
-        return "User %s: authenticated %r" % (self.user_id,
+        return "User %s: authenticated %r" % (self.user_email,
                                               self.user_is_authenticated)
 
 class UserSessions:
@@ -42,9 +45,9 @@ class UserSessions:
     users = {}
 
     @classmethod
-    def load(cls, userid):
+    def load(cls, user_email):
         with cls.lock:
-            user = cls.users.get(userid)
+            user = cls.users.get(user_email)
             if user:
                 return user
 
@@ -58,10 +61,10 @@ class UserSessions:
             if not db:
                 return None
 
-            userdata = db_load_user(db, userid)
+            userdata = db_load_user(db, user_email)
             if userdata:
-                result = User(userid = userdata["user_id"])
+                result = User(user_email = userdata["user_email"])
 
             db_disconn(db)
-            cls.users[userid] = result
+            cls.users[user_email] = result
             return result

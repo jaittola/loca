@@ -3,6 +3,10 @@
   <head>
     <meta name="viewport"
           content="initial-scale=1.0, user-scalable=no" />
+
+    <link rel="shortcut icon"
+          href="{{ vars.shortcut_icon }}" />
+
     <link rel="stylesheet"
           href="{{ vars.css }}"
           type="text/css" />
@@ -25,9 +29,10 @@
 
   </head>
   <body>
-    {% if vars.user_id %}
+    {% if vars.user_email %}
     <div id="user_state_links">
-      <p id="logout_link">
+      <p id="user_info_p">
+        Logged in as {{ vars.user_email }}.
         <a href="{{ vars.logout }}">Log out</a>
       </p>
     </div>

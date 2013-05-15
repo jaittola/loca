@@ -8,4 +8,4 @@ body { height: 100%; margin: 1%; padding: 0 }
                 margin-right: auto;
                 margin-top: 1em }
 #depth_legend_table { border-collapse: collapse }
-#logout_link { text-align: right; }
+#user_info_p { text-align: right; }

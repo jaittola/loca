@@ -1,6 +1,6 @@
 
 CREATE OR REPLACE FUNCTION
-update_vis_ranges(trip_id_ INTEGER)
+update_depth_display_ranges(trip_id_ INTEGER)
 RETURNS void AS $$
 DECLARE
     prev_lat DOUBLE PRECISION;
@@ -14,10 +14,10 @@ BEGIN
         prev_lat := NULL;
         prev_lon := NULL;
 
-        FOR pos IN SELECT position_id, latitude, longitude
+        FOR pos IN SELECT id, latitude, longitude
                        FROM position
                        WHERE trip_id = trip_id_
-                       ORDER BY position_id
+                       ORDER BY id
         LOOP
             IF prev_lat IS NOT NULL AND
                pos.latitude < prev_lat + range.lat_range AND
@@ -38,7 +38,7 @@ BEGIN
             -- data within the area.
             UPDATE depth
                 SET display_range = range.range
-                WHERE depth_id = min_depth_id;
+                WHERE id = min_depth_id;
 
             prev_lat := pos.latitude;
             prev_lon := pos.longitude;
@@ -70,7 +70,7 @@ get_min_depth_id(center_latitude DOUBLE PRECISION,
                  display_range INTEGER)
 RETURNS INTEGER
 AS $$
-    WITH depths AS (SELECT depth_id,
+    WITH depths AS (SELECT id AS depth_id,
                     depth,
                     row_number() OVER (ORDER BY depth) AS rnum
                     FROM depth
@@ -102,7 +102,7 @@ BEGIN
         RAISE EXCEPTION 'Bad depth range %', display_range;
     END IF;
 
-    RETURN QUERY SELECT position_id FROM position
+    RETURN QUERY SELECT id FROM position
            WHERE latitude >= (center_latitude - lat_diff)
            AND latitude <= (center_latitude + lat_diff)
            AND longitude >=  (center_longitude - lon_diff)
@@ -112,7 +112,7 @@ $$
 LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION calc_vis_range(range INTEGER)
+CREATE OR REPLACE FUNCTION calc_display_range(range INTEGER)
 RETURNS VOID AS $$
 DECLARE
     range_to_lat DOUBLE PRECISION;
