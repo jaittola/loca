@@ -13,13 +13,16 @@ def root():
 @login_required
 def depth_map():
     return render_template("map.html",
+                           view_loader="depthView",
                            vars=TemplateVars(app))
 
 @app.route("/trip_map/")
 def trip_map():
     return render_template("map.html",
+                           view_loader="tripView",
                            vars=TemplateVars(app))
 
 @app.route("/unauthorized")
 def unauthorized_user():
-    return render_template("unauthorized.html")
+    return render_template("unauthorized.html",
+                           vars=TemplateVars(app))

@@ -12,6 +12,8 @@ class TemplateVars():
         self.map_utils = url_for("static", filename="map_utils.js")
         self.hsv2rgb = url_for("static", filename="hsv2rgb.js")
         self.logout = url_for("logout")
+        self.login = url_for("login")
+        self.root = url_for("root")
         self.depth_map = url_for("depth_map")
         self.trip_map = url_for("trip_map")
         self.user_email = current_user.get_email() \

@@ -1,5 +1,5 @@
 
-function mapUtils() {
+function depthView() {
 
     // Depth color scale.
     //
@@ -104,14 +104,14 @@ function mapUtils() {
             }
 
             var tablestring =
-                "<table id=\"depth_legend_table\">" +
+                "<table id=\"legend_table\">" +
                 "<tbody><tr>" +
                 "<td>Depth legend (m):</td>" +
                 cells +
                 "</tr></tbody></table>";
 
             // Add the depth range table to the document.
-            $("#depth_legend").append(tablestring);
+            $("#legend").append(tablestring);
 
             // Add colors of the depth ranges to the css. We skip the
             // first column (which is transparent and has no color), and
@@ -301,6 +301,39 @@ function mapUtils() {
     });
 }
 
+function tripView() {
+    // A container for the map.
+    var mapView = {
+        // The map canvas.
+        map: new google.maps.Map(document.getElementById("map_canvas"),
+                                 { zoom: 12,
+                                   scaleControl: true,
+                                   center: new google.maps.LatLng(59.87, 23.25),
+                                   mapTypeId: google.maps.MapTypeId.HYBRID
+                                 }),
+
+        // State variable to prevent fetching new data points all the time
+        // while moving or zooming the map.
+        dragging: false,
+
+        // Trips that are enabled and shown on the map.
+        enabledTrips: {},
+
+        // Dots on the map.
+        markers: {},
+
+        // The info window to use for marker details.
+        infoWindow: new google.maps.InfoWindow(),
+    };
+
+    var loadTripList = function(mapView) {
+
+    }
+
+    loadTripList(mapView);
+}
+
+
 // Set up.
 function loadMap() {
     var script = document.createElement("script");
@@ -310,7 +343,7 @@ function loadMap() {
         "key=" + mapsKey +
         "&sensor=false" +
         "&libraries=visualization" +
-        "&callback=mapUtils";
+        "&callback=" + viewLoader;
 
     document.body.appendChild(script);
 }

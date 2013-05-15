@@ -25,25 +25,29 @@
 
     <script type="text/javascript">
       var mapsKey = "{{ vars.maps_key }}";
+      var viewLoader = "{{view_loader}}";
       window.onload = loadMap;
     </script>
 
   </head>
   <body>
-    {% if vars.user_email %}
-    <div id="nav_tools">
-      <div id="nav_links">
-        <a href="{{ vars.depth_map }}">Depth view</a>
-        <a href="{{ vars.trip_map }}">Trip view</a>
-      </div>
-      <div id="user_info">
-          Logged in as {{ vars.user_email }}.
-          <a href="{{ vars.logout }}">Log out</a>
-      </div>
+    <div id="nav_links">
+      {% if vars.user_email %}
+      <a href="{{ vars.trip_map }}">Trip view</a>
+      <a href="{{ vars.depth_map }}">Depth view</a>
+      {% endif %}
+      &nbsp;
     </div>
-    {% endif %}
+    <div id="user_info">
+      {% if vars.user_email %}
+      Logged in as {{ vars.user_email }}.
+      <a href="{{ vars.logout }}">Log out</a>
+      {% else %}
+      <a href="{{ vars.login }}">Log in</a>
+      {% endif %}
+    </div>
     <div id="controls">Control panel</div>
     <div id="map_canvas"> </div>
-    <div id="depth_legend"> </div>
+    <div id="legend"> </div>
   </body>
 </html>

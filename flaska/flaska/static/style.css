@@ -6,15 +6,15 @@ body { height: 100%; margin: 1%; padding: 0 }
 #controls { width: 15%;
             height: 90%;
             float: left;
-            background-color: #ffbbbb; }
-#depth_legend { height: 2em;
-                width: 60em;
-                margin-left: auto;
-                margin-right: auto;
-                margin-top: 1em }
-#depth_legend_table { border-collapse: collapse }
+            background-color: #cccccc; }
+#legend { width: 60em;
+          margin-left: auto;
+          margin-right: auto;
+          clear: both; }
+#legend_table { border-collapse: collapse }
 #nav_links { float: left;
              width: 50%; }
 #user_info { float: left;
              width: 50%;
              text-align: right; }
+/* Look at clearfix */
