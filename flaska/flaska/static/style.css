@@ -1,20 +1,24 @@
 html { height: 100% }
 body { height: 100%; margin: 1%; padding: 0 }
-#map_canvas { width: 85%;
+#map_canvas { width: 84%;
               height: 90%;
-              float: left;}
-#controls { width: 15%;
+              float: left;
+              margin: 3px; }
+#controls { width: 14%;
             height: 90%;
             float: left;
-            background-color: #cccccc; }
+            background-color: #cccccc;
+            margin: 3px; }
 #legend { width: 60em;
           margin-left: auto;
           margin-right: auto;
           clear: both; }
 #legend_table { border-collapse: collapse }
 #nav_links { float: left;
-             width: 50%; }
+             width: 49%;
+             margin: 3px; }
 #user_info { float: left;
-             width: 50%;
-             text-align: right; }
+             width: 49%;
+             text-align: right;
+             margin: 3px; }
 /* Look at clearfix */

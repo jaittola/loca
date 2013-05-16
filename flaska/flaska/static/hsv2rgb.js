@@ -13,97 +13,100 @@
  * * http://www.cs.rit.edu/~ncs/color/t_convert.html
  */
 
-/**
- * Translate a float value between 0 - 1.0 to a hexadecimal number
- * between 0 - 0xff.
- */
-function fToHex(floatVal) {
-    var s = Math.round(floatVal * 255).toString(16)
-    if (s.length < 2) {
-        return "0" + s;
-    }
-    return s;
-}
 
-/**
- * Translate r, g, b values (that are in floating point between 0 - 0.1)
- * to an rgb string. (#rrggbb).
- */
-function rgbResult(r, g, b) {
-    return "#" + fToHex(r) + fToHex(g) + fToHex(b);
-}
+define({
+    /**
+     * Translate a float value between 0 - 1.0 to a hexadecimal number
+     * between 0 - 0xff.
+     */
+    fToHex: function(floatVal) {
+        var s = Math.round(floatVal * 255).toString(16)
+        if (s.length < 2) {
+            return "0" + s;
+        }
+        return s;
+    },
 
-/**
- * Convert hsv to RGB.
- * h = [0, 359]
- * s, v = [0, 100]
- */
-function hsvToRgb(h, s, v) {
-    var r, g, b;
-    var i;
-    var f, p, q, t;
+    /**
+     * Translate r, g, b values (that are in floating point between 0 - 0.1)
+     * to an rgb string. (#rrggbb).
+     */
+    rgbResult: function(r, g, b) {
+        return "#" + this.fToHex(r) + this.fToHex(g) + this.fToHex(b);
+    },
 
-    // Make sure our arguments stay in-range
-    h = Math.max(0, Math.min(360, h));
-    s = Math.max(0, Math.min(100, s));
-    v = Math.max(0, Math.min(100, v));
+    /**
+     * Convert hsv to RGB.
+     * h = [0, 359]
+     * s, v = [0, 100]
+     */
+    hsvToRgb: function(h, s, v) {
+        var r, g, b;
+        var i;
+        var f, p, q, t;
 
-    // We accept saturation and value arguments from 0 to 100 because that's
-    // how Photoshop represents those values. Internally, however, the
-    // saturation and value are calculated from a range of 0 to 1. We make
-    // That conversion here.
-    s /= 100;
-    v /= 100;
+        // Make sure our arguments stay in-range
+        h = Math.max(0, Math.min(360, h));
+        s = Math.max(0, Math.min(100, s));
+        v = Math.max(0, Math.min(100, v));
 
-    if (s == 0) {
-        // Achromatic (grey)
-        r = g = b = v;
-        return rgbResult(v, v, v);
-    }
+        // We accept saturation and value arguments from 0 to 100 because that's
+        // how Photoshop represents those values. Internally, however, the
+        // saturation and value are calculated from a range of 0 to 1. We make
+        // That conversion here.
+        s /= 100;
+        v /= 100;
 
-    h /= 60; // sector 0 to 5
-    i = Math.floor(h);
-    f = h - i; // factorial part of h
-    p = v * (1 - s);
-    q = v * (1 - s * f);
-    t = v * (1 - s * (1 - f));
+        if (s == 0) {
+            // Achromatic (grey)
+            r = g = b = v;
+            return this.rgbResult(v, v, v);
+        }
 
-    switch(i) {
-    case 0:
-        r = v;
-        g = t;
-        b = p;
-        break;
+        h /= 60; // sector 0 to 5
+        i = Math.floor(h);
+        f = h - i; // factorial part of h
+        p = v * (1 - s);
+        q = v * (1 - s * f);
+        t = v * (1 - s * (1 - f));
 
-    case 1:
-        r = q;
-        g = v;
-        b = p;
-        break;
+        switch(i) {
+        case 0:
+            r = v;
+            g = t;
+            b = p;
+            break;
 
-    case 2:
-        r = p;
-        g = v;
-        b = t;
-        break;
+        case 1:
+            r = q;
+            g = v;
+            b = p;
+            break;
 
-    case 3:
-        r = p;
-        g = q;
-        b = v;
-        break;
+        case 2:
+            r = p;
+            g = v;
+            b = t;
+            break;
 
-    case 4:
-        r = t;
-        g = p;
-        b = v;
-        break;
+        case 3:
+            r = p;
+            g = q;
+            b = v;
+            break;
 
-    default: // case 5:
-        r = v;
-        g = p;
-        b = q;
-    }
+        case 4:
+            r = t;
+            g = p;
+            b = v;
+            break;
 
-    return rgbResult(r, g, b);
-}
+        default: // case 5:
+            r = v;
+            g = p;
+            b = q;
+        }
+
+        return this.rgbResult(r, g, b);
+    },
+})

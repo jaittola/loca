@@ -9,8 +9,6 @@ class TemplateVars():
     def __init__(self, app):
         self.css = url_for("static", filename="style.css")
         self.shortcut_icon = url_for("static", filename="favicon.ico")
-        self.map_utils = url_for("static", filename="map_utils.js")
-        self.hsv2rgb = url_for("static", filename="hsv2rgb.js")
         self.logout = url_for("logout")
         self.login = url_for("login")
         self.root = url_for("root")
@@ -20,3 +18,7 @@ class TemplateVars():
             if current_user.is_authenticated() \
             else None
         self.maps_key = app.config['GOOGLE_MAPS_KEY'];
+
+        self.static_path = url_for("static", filename="")
+        self.requirejs = url_for("static", filename="require.js")
+        self.map_main = url_for("static", filename="map_main.js")
