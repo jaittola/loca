@@ -10,6 +10,8 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
         // Dots on the map.
         this.depthMarkers = {};
 
+        this.showOnlyValidMeasurements = true;
+
         // The gradient colors to use
         this.gradient = new DepthGradient();
 
@@ -63,6 +65,7 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
         // up an info window with data about the marker.
         this.setupMarkerInfoWindow = function(mapView, marker) {
             google.maps.event.addListener(marker, 'click', function(event) {
+                var measurement = marker.measurement;
                 var tstamp = "";
                 // "yyyymmddhhmiss".length == 14
                 if (measurement.pos_time_utc.length == 14) {
@@ -89,6 +92,8 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
                     mapView.encode(lat) + " / " +
                     mapView.encode(lon) + "<br>" +
                     mapView.encode(depth) +
+                    "<br>" +
+                    mapView.encode("position_id: " + measurement.position_id) +
                     "</p>";
 
                 mapView.infoWindow.setContent(infoStr);
@@ -97,7 +102,8 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
             });
         };
 
-        // Load the depth data.
+        // Load the depth data. This is the main function herein. This
+        // function gets called whenever the map is zoomed or panned.
         this.update = function(mapView) {
             var bounds = mapView.map.getBounds();
             var neCorner = bounds.getNorthEast();
@@ -137,14 +143,57 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
                                strokeColor: color}
                     });
 
-                    marker.setMap(mapView.map);
                     marker.measurement = measurement;
+                    mapView.setToMap(mapView, marker);
 
                     mapView.setupMarkerInfoWindow(mapView, marker);
                     mapView.depthMarkers[measurement.position_id] = marker;
                 });
             });
         };
+
+        this.setToMap = function(mapView, marker) {
+            var mapForMarker = ((marker.measurement.erroneous &&
+                                 mapView.showOnlyValidMeasurements) ?
+                                null : mapView.map);
+            var currentMap = marker.getMap();
+
+            if (mapForMarker != currentMap) {
+                marker.setMap(mapForMarker);
+            }
+        };
+
+        this.reFilterMeasurements = function() {
+            for (var posId in this.depthMarkers) {
+                if (this.depthMarkers.hasOwnProperty(posId)) {
+                    var marker = this.depthMarkers[posId];
+                    this.setToMap(this, marker);
+                }
+            }
+        }
+
+        this.measurementSelectorValueChanged = function() {
+            if ($('.measurement_selector_radio:checked').val() != "0") {
+                this.showOnlyValidMeasurements = true;
+            }
+            else {
+                this.showOnlyValidMeasurements = false;
+            }
+
+            this.reFilterMeasurements();
+        };
+
+        this.setupControlPanel = function() {
+            var dv = this;
+            $.get("/snippets/depth_view/control_panel/", function(data) {
+                $("#controls").html(data);
+                $(".measurement_selector_radio").click(function() {
+                    dv.measurementSelectorValueChanged();
+                });
+            });
+        };
+
+        this.setupControlPanel();
     };
 
     var dv = new DepthView();

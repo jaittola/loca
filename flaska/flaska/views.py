@@ -26,3 +26,7 @@ def trip_map():
 def unauthorized_user():
     return render_template("unauthorized.html",
                            vars=TemplateVars(app))
+
+@app.route("/snippets/depth_view/control_panel/")
+def depth_control_panel():
+    return render_template("depth_view_control_panel.html")
