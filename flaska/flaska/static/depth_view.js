@@ -10,10 +10,19 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
         // Dots on the map.
         this.depthMarkers = {};
 
-        this.showOnlyValidMeasurements = true;
+        // Constants.
+        this.allMeasurements = 0;
+        this.validMeasurements = 1;
+        this.badMeasurements = 2;
+
+        // Whether to show only the correct, incorrect, or
+        // all measurements.
+        this.measurementDisplayStatus = this.validMeasurements;
 
         // The gradient colors to use
         this.gradient = new DepthGradient();
+
+        this.validDepthCheckboxName = "validDepthCheckBox";
 
         // Utility for creating the URL for loading depth data.
         this.getDepthDataUrl = function(bounds, zoom) {
@@ -48,114 +57,138 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
         };
 
         // Load depth data
-        this.queryDepthData = function(mapView, itemCallback) {
-            var bounds = mapView.map.getBounds();
+        this.queryDepthData = function(depthView, itemCallback) {
+            var bounds = depthView.map.getBounds();
             if (null == bounds || undefined == bounds) {
                 alert("Map bounds are not available. Cannot show any data. " +
                       "Please change the zoom level or reload the map");
                 return;
             }
 
-            $.getJSON(mapView.getDepthDataUrl(bounds,
-                                              mapView.map.getZoom()),
+            $.getJSON(depthView.getDepthDataUrl(bounds,
+                                              depthView.map.getZoom()),
                       itemCallback);
         };
 
         // Sets up an event lister for each marker so that clicking brings
         // up an info window with data about the marker.
-        this.setupMarkerInfoWindow = function(mapView, marker) {
+        this.setupMarkerInfoWindow = function(depthView, marker) {
             google.maps.event.addListener(marker, 'click', function(event) {
-                var measurement = marker.measurement;
+                var point = marker.point;
                 var tstamp = "";
                 // "yyyymmddhhmiss".length == 14
-                if (measurement.pos_time_utc.length == 14) {
+                if (point.pos_time_utc.length == 14) {
                     tstamp =
-                        measurement.pos_time_utc.substr(0, 4) +
+                        point.pos_time_utc.substr(0, 4) +
                         "-" +
-                        measurement.pos_time_utc.substr(4, 2) +
+                        point.pos_time_utc.substr(4, 2) +
                         "-" +
-                        measurement.pos_time_utc.substr(6, 2) +
+                        point.pos_time_utc.substr(6, 2) +
                         " " +
-                        measurement.pos_time_utc.substr(8, 2) +
+                        point.pos_time_utc.substr(8, 2) +
                         ":" +
-                        measurement.pos_time_utc.substr(10, 2) +
+                        point.pos_time_utc.substr(10, 2) +
                         ":" +
-                        measurement.pos_time_utc.substr(12, 2) +
+                        point.pos_time_utc.substr(12, 2) +
                         " UTC";
                 }
 
-                var depth = "Depth: " + measurement.depth + "m";
-                var lat = measurement.latitude;
-                var lon = measurement.longitude;
+                var depth = "Depth: " + point.depth + "m";
+                var lat = point.latitude;
+                var lon = point.longitude;
 
-                var infoStr = "<p>" + mapView.encode(tstamp) + "<br>" +
-                    mapView.encode(lat) + " / " +
-                    mapView.encode(lon) + "<br>" +
-                    mapView.encode(depth) +
+                var infoStr = "<p>" + depthView.encode(tstamp) + "<br>" +
+                    depthView.encode(lat) + " / " +
+                    depthView.encode(lon) + "<br>" +
+                    depthView.encode(depth) +
                     "<br>" +
-                    mapView.encode("position_id: " + measurement.position_id) +
+                    depthView.encode("position_id: " + point.position_id) +
+                    "<br>" +
+                    depthView.makeSuspectCheckbox(depthView, point) +
                     "</p>";
 
-                mapView.infoWindow.setContent(infoStr);
-                mapView.infoWindow.setPosition(event.latLng);
-                mapView.infoWindow.open(mapView.map);
+                depthView.infoWindow.setContent(infoStr);
+                depthView.infoWindow.setPosition(event.latLng);
+                depthView.infoWindow.open(depthView.map);
+                depthView.makeValidDepthCheckboxCallback(depthView, point);
+            });
+        };
+
+        this.makeSuspectCheckbox = function(depthView, point) {
+            return "<form>" +
+                "Depth measurement valid: " +
+                '<input type="checkbox" name="' +
+                depthView.validDepthCheckboxName +
+                '" class="' +
+                depthView.validDepthCheckboxName +
+                '" value="1"' +
+                (point.depth_erroneous ? '' : 'checked="1"') +
+                "></form>";
+        };
+
+        this.updateMeasurementValidity = function(depthView, point) {
+            $.ajax({ url: "/api/1/measurement/" + point.position_id,
+                     type: "POST",
+                     data: JSON.stringify({
+                         depth_erroneous: point.depth_erroneous }),
+                     dataType: "json",
+                     contentType: "application/json; charset=utf-8",
+                     success: function() {
+                         depthView.reFilterMeasurements();
+                     }});
+            // TODO, error handling.
+        };
+
+        this.makeValidDepthCheckboxCallback = function(depthView, point) {
+            $("." + depthView.validDepthCheckboxName).click(function() {
+                point.depth_erroneous = !(this.checked);
+                depthView.updateMeasurementValidity(depthView, point);
             });
         };
 
         // Load the depth data. This is the main function herein. This
         // function gets called whenever the map is zoomed or panned.
-        this.update = function(mapView) {
-            var bounds = mapView.map.getBounds();
-            var neCorner = bounds.getNorthEast();
-            var swCorner = bounds.getSouthWest();
-
-            for (var posId in mapView.depthMarkers) {
-                if (mapView.depthMarkers.hasOwnProperty(posId)) {
-                    var marker = mapView.depthMarkers[posId];
-                    if (marker.measurement.latitude > neCorner.lat() ||
-                        marker.measurement.latitude < swCorner.lat() ||
-                        marker.measurement.longitude > neCorner.lng() ||
-                        marker.measurement.longitude < swCorner.lng()) {
+        this.update = function(depthView) {
+            for (var posId in depthView.depthMarkers) {
+                if (depthView.depthMarkers.hasOwnProperty(posId)) {
+                    var marker = depthView.depthMarkers[posId];
+                    if (depthView.isInView(depthView, marker.point)) {
                         // This point is outside the current view => remove.
                         marker.setMap(null);
-                        delete mapView.depthMarkers[posId];
+                        delete depthView.depthMarkers[posId];
                     }
                 }
             }
 
-            mapView.queryDepthData(mapView, function(depthData) {
-                $.each(depthData.depths, function(i, measurement) {
-                    if (mapView.depthMarkers
-                        .hasOwnProperty(measurement.position_id)) {
+            depthView.queryDepthData(depthView, function(depthData) {
+                $.each(depthData.depths, function(i, point) {
+                    if (depthView.depthMarkers
+                        .hasOwnProperty(point.position_id)) {
                         // Skip the ones that we have already.
                         return;
                     }
 
-                    var color = mapView.gradient.color(measurement.depth);
-                    var marker = new google.maps.Marker({
-                        position: new google.maps.LatLng(measurement.latitude,
-                                                         measurement.longitude),
-                        flat: true,
-                        visible: true,
-                        icon: {fillColor: color,
-                               fillOpacity: 1.0,
-                               path: google.maps.SymbolPath.CIRCLE,
-                               strokeColor: color}
-                    });
+                    var color = depthView.gradient.color(point.depth);
+                    var marker = depthView.makeMarker(point, color);
+                    depthView.setToMap(depthView, marker);
 
-                    marker.measurement = measurement;
-                    mapView.setToMap(mapView, marker);
-
-                    mapView.setupMarkerInfoWindow(mapView, marker);
-                    mapView.depthMarkers[measurement.position_id] = marker;
+                    depthView.setupMarkerInfoWindow(depthView, marker);
+                    depthView.depthMarkers[point.position_id] = marker;
                 });
             });
         };
 
-        this.setToMap = function(mapView, marker) {
-            var mapForMarker = ((marker.measurement.erroneous &&
-                                 mapView.showOnlyValidMeasurements) ?
-                                null : mapView.map);
+        this.setToMap = function(depthView, marker) {
+            var mapForMarker = null;
+
+            if (depthView.measurementDisplayStatus == depthView.allMeasurements ||
+                (depthView.measurementDisplayStatus == depthView.validMeasurements &&
+                 !marker.point.depth_erroneous) ||
+                (depthView.measurementDisplayStatus == depthView.badMeasurements &&
+                 marker.point.depth_erroneous)) {
+                mapForMarker = depthView.map;
+            }
+
             var currentMap = marker.getMap();
 
             if (mapForMarker != currentMap) {
@@ -173,12 +206,8 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
         }
 
         this.measurementSelectorValueChanged = function() {
-            if ($('.measurement_selector_radio:checked').val() != "0") {
-                this.showOnlyValidMeasurements = true;
-            }
-            else {
-                this.showOnlyValidMeasurements = false;
-            }
+            this.measurementDisplayStatus =
+                $('.measurement_selector_radio:checked').val();
 
             this.reFilterMeasurements();
         };

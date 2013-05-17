@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS position (
    trip_id INTEGER NOT NULL REFERENCES trip (id)
       ON DELETE CASCADE,
    latitude DOUBLE PRECISION,
-   longitude DOUBLE PRECISION
+   longitude DOUBLE PRECISION,
+   erroneous BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 DROP INDEX IF EXISTS position_range_idx;
@@ -32,19 +33,21 @@ CREATE TABLE IF NOT EXISTS ground_speed_course (
    id SERIAL PRIMARY KEY,
    position_id INTEGER REFERENCES position (id) ON DELETE CASCADE,
    speed DOUBLE PRECISION NOT NULL,  -- kn
-   course DOUBLE PRECISION           -- degrees
+   course DOUBLE PRECISION,           -- degrees
+   erroneous BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS water_speed (
    id SERIAL PRIMARY KEY,
    position_id INTEGER REFERENCES position (id) ON DELETE CASCADE,
-   speed DOUBLE PRECISION NOT NULL  -- kn
+   speed DOUBLE PRECISION NOT NULL,  -- kn
+   erroneous BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS depth (
    id SERIAL PRIMARY KEY,
    position_id INTEGER REFERENCES position (id) ON DELETE CASCADE,
-   depth DOUBLE PRECISION NOT NULL,   -- m
+   depth DOUBLE PRECISION NOT NULL,   -- mp
    display_range INTEGER NOT NULL DEFAULT 0,
    erroneous BOOLEAN NOT NULL DEFAULT FALSE
 );

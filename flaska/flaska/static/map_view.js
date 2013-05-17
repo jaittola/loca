@@ -45,7 +45,8 @@ define(function() {
                      { lat: centerLat,
                        lon: centerLon,
                        zoom: zoom },
-                     { expires: 14 })
+                     { path: "/",
+                       expires: 365 })
 
             mapView.update(mapView);
         }
@@ -53,6 +54,38 @@ define(function() {
         // Utility for HTML encoding.
         this.encode = function(value) {
             return $('<div/>').text(value).html();
+        };
+
+        // Return true if a position is on the current map view, false
+        // if not.
+        this.isInView = function(mapView, point) {
+            var bounds = mapView.map.getBounds();
+            var neCorner = bounds.getNorthEast();
+            var swCorner = bounds.getSouthWest();
+
+            if (point.latitude < neCorner.lat() &&
+                point.latitude > swCorner.lat() &&
+                point.longitude < neCorner.lng() &&
+                point.longitude > swCorner.lng()) {
+                return true;
+            }
+            return false;
+        };
+
+        this.makeMarker = function(point, color) {
+            var marker = new google.maps.Marker({
+                position: new google.maps.LatLng(point.latitude,
+                                                 point.longitude),
+                flat: true,
+                visible: true,
+                icon: {fillColor: color,
+                       fillOpacity: 1.0,
+                       path: google.maps.SymbolPath.CIRCLE,
+                       strokeColor: color}
+            });
+            marker.point = point;
+
+            return marker;
         };
 
         // Hack for getting the correct object to the event listeners.
