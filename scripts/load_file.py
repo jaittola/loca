@@ -267,21 +267,5 @@ def db_conn(db_name, db_user, db_passwd):
     return psycopg2.connect("dbname={} user={} password={}"
                             .format(db_name, db_user, db_passwd))
 
-
-
-
-def foo():
-    if len(sys.argv) != 3:
-        sys.stderr.write("Usage: {0} [input file] [input date]\n"
-                         .format(sys.argv[0]))
-        sys.exit(1)
-
-    input_file = sys.argv[1]
-    input_date = sys.argv[2]
-
-
-    end_tx(force=True)
-
-
 if __name__ == "__main__":
     main()
