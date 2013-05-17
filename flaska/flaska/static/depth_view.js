@@ -110,7 +110,7 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
                 depthView.infoWindow.setContent(infoStr);
                 depthView.infoWindow.setPosition(event.latLng);
                 depthView.infoWindow.open(depthView.map);
-                depthView.makeValidDepthCheckboxCallback(depthView, point);
+                depthView.makeDataValidityCheckboxCallbacks(depthView, point);
             });
         };
 
@@ -139,7 +139,7 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
             // TODO, error handling.
         };
 
-        this.makeValidDepthCheckboxCallback = function(depthView, point) {
+        this.makeDataValidityCheckboxCallbacks = function(depthView, point) {
             $("." + depthView.validDepthCheckboxName).click(function() {
                 point.depth_erroneous = !(this.checked);
                 depthView.updateMeasurementValidity(depthView, point);
@@ -169,10 +169,9 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
                     }
 
                     var color = depthView.gradient.color(point.depth);
-                    var marker = depthView.makeMarker(point, color);
+                    var marker = depthView.makeMarker(depthView, point, color);
                     depthView.setToMap(depthView, marker);
 
-                    depthView.setupMarkerInfoWindow(depthView, marker);
                     depthView.depthMarkers[point.position_id] = marker;
                 });
             });

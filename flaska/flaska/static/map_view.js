@@ -72,7 +72,7 @@ define(function() {
             return false;
         };
 
-        this.makeMarker = function(point, color) {
+        this.makeMarker = function(mapView, point, color) {
             var marker = new google.maps.Marker({
                 position: new google.maps.LatLng(point.latitude,
                                                  point.longitude),
@@ -84,8 +84,83 @@ define(function() {
                        strokeColor: color}
             });
             marker.point = point;
+            mapView.setupMarkerInfoWindow(mapView, marker);
 
             return marker;
+        };
+
+        // Sets up an event lister for each marker so that clicking brings
+        // up an info window with data about the marker.
+        this.setupMarkerInfoWindow = function(mapView, marker) {
+            google.maps.event.addListener(marker, 'click', function(event) {
+                var point = marker.point;
+                var tstamp = "";
+                // "yyyymmddhhmiss".length == 14
+                if (point.pos_time_utc.length == 14) {
+                    tstamp =
+                        point.pos_time_utc.substr(0, 4) +
+                        "-" +
+                        point.pos_time_utc.substr(4, 2) +
+                        "-" +
+                        point.pos_time_utc.substr(6, 2) +
+                        " " +
+                        point.pos_time_utc.substr(8, 2) +
+                        ":" +
+                        point.pos_time_utc.substr(10, 2) +
+                        ":" +
+                        point.pos_time_utc.substr(12, 2) +
+                        " UTC";
+                }
+
+                var depth = "";
+                var waterSpeed = "";
+                var groundSpeed = "";
+                var course = "";
+                if (point.hasOwnProperty("depth")) {
+                    depth = mapView.encode("Depth: " + point.depth + " m") +
+                        "<br>";
+                }
+                if (point.hasOwnProperty("water_speed")) {
+                    waterSpeed = mapView.encode("Speed (log): " +
+                                                point.water_speed + " kn") +
+                        "<br>";
+                }
+                if (point.hasOwnProperty("ground_speed")) {
+                    groundSpeed = mapView.encode("SOG (GPS speed): " +
+                                           point.ground_speed + " kn") +
+                        "<br>";
+                }
+                if (point.hasOwnProperty("course")) {
+                    course = mapView.encode("Course (GPS): " +
+                                           point.course + "°") +
+                        "<br>";
+                }
+
+
+                var infoStr = "<p>" + mapView.encode(tstamp) + "<br>" +
+                    mapView.encode(point.latitude) + " / " +
+                    mapView.encode(point.longitude) + "<br>" +
+                    depth +
+                    waterSpeed +
+                    groundSpeed +
+                    course +
+                    mapView.encode("position_id: " + point.position_id) +
+                    "<br>" +
+                    mapView.makeSuspectCheckbox(mapView, point) +
+                    "</p>";
+
+                mapView.infoWindow.setContent(infoStr);
+                mapView.infoWindow.setPosition(event.latLng);
+                mapView.infoWindow.open(mapView.map);
+                mapView.makeDataValidityCheckboxCallbacks(mapView, point);
+            });
+        };
+
+        this.makeSuspectCheckbox = function(mapView, point) {
+            return "";
+        };
+
+        this.makeDataValidityCheckboxCallbacks = function(mapView, point) {
         };
 
         // Hack for getting the correct object to the event listeners.

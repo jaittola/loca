@@ -10,9 +10,6 @@ define(["map_view"], function(MapView) {
         // Dots on the map.
         this.points = {};
 
-        // Trips that are shown
-        this.shownTripIds = {};
-
         // Fetch the list of trips from the server and show it.
         this.loadTrips = function() {
             var tripView = this;
@@ -50,7 +47,8 @@ define(["map_view"], function(MapView) {
             var path = "/api/1/trip/" + tripView.encode(trip_id);
             $.getJSON(path, function(tripData) {
                 $.each(tripData.points, function(i, point) {
-                    var marker = tripView.makeMarker(point, "#ff0000");
+                    var marker = tripView.makeMarker(tripView, point,
+                                                     "#ff0000");
                     tripView.showOnMap(tripView, marker);
                     tripView.points[point.position_id] = marker;
                 });
@@ -58,7 +56,6 @@ define(["map_view"], function(MapView) {
         };
 
         this.dropTrip = function(tripView, trip_id) {
-            delete tripView.shownTripIds[trip_id];
             for (var posId in tripView.points) {
                 if (tripView.points.hasOwnProperty(posId)) {
                     var point = tripView.points[posId];

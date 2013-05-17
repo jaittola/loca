@@ -50,7 +50,7 @@ def auth_callback(resp):
                 user.set_access_token(access_token)
                 # This is flask-login's login method.
                 login_user(user)
-                return redirect(url_for("root"))
+                return redirect(request.args.get("next") or url_for("root"))
     # Otherwise this user is not known and access is not allowed.
     return redirect(url_for("unauthorized_user"))
 
