@@ -1,10 +1,13 @@
-'use strict';
-
 /**
   * Base class for the map views.
   */
 define(function() {
+    'use strict';
+
     var MapView = function() {
+        var that = {};
+
+        // Set up.
         var zoom = 12;
         var centerLat = 60.15067161;
         var centerLon = 24.96664072;
@@ -16,7 +19,8 @@ define(function() {
             centerLon = cookie.lon;
         }
 
-        this.map = new google.maps.Map(document.getElementById("map_canvas"),
+        // The actual map.
+        that.map = new google.maps.Map(document.getElementById("map_canvas"),
                                        { zoom: zoom,
                                          scaleControl: true,
                                          center: new google.maps.LatLng(centerLat, centerLon),
@@ -25,21 +29,22 @@ define(function() {
 
         // State variable to prevent fetching new data points all the time
         // while moving or zooming the map.
-        this.dragging = false;
+        that.dragging = false;
 
         // The info window to use for marker details.
-        this.infoWindow = new google.maps.InfoWindow();
+        that.infoWindow = new google.maps.InfoWindow();
 
         // Update the data on the view.
         // To be re-implemented in the inherited classes.
-        this.update = function(mapView) { };
+        that.update = function() { };
 
-        // Do not re-implement this in the inherited classes.
-        // Updates the current position into a cookie.
-        this.viewChanged = function(mapView) {
-            var centerLat = mapView.map.center.lat();
-            var centerLon = mapView.map.center.lng();
-            var zoom = mapView.map.zoom;
+        // Called when the viewport of the map changes because of
+        // panning or zooming. Updates the current position into a
+        // cookie, and calls the update function.
+        var viewChanged = function() {
+            var centerLat = that.map.center.lat();
+            var centerLon = that.map.center.lng();
+            var zoom = that.map.zoom;
 
             $.cookie('map_pos',
                      { lat: centerLat,
@@ -48,18 +53,18 @@ define(function() {
                      { path: "/",
                        expires: 365 })
 
-            mapView.update(mapView);
+            that.update();
         }
 
         // Utility for HTML encoding.
-        this.encode = function(value) {
+        that.encode = function(value) {
             return $('<div/>').text(value).html();
         };
 
         // Return true if a position is on the current map view, false
         // if not.
-        this.isInView = function(mapView, point) {
-            var bounds = mapView.map.getBounds();
+        that.isInView = function(point) {
+            var bounds = that.map.getBounds();
             var neCorner = bounds.getNorthEast();
             var swCorner = bounds.getSouthWest();
 
@@ -72,7 +77,8 @@ define(function() {
             return false;
         };
 
-        this.makeMarker = function(mapView, point, color) {
+        // Make a marker at the specified position and color.
+        that.makeMarker = function(point, color) {
             var marker = new google.maps.Marker({
                 position: new google.maps.LatLng(point.latitude,
                                                  point.longitude),
@@ -84,14 +90,14 @@ define(function() {
                        strokeColor: color}
             });
             marker.point = point;
-            mapView.setupMarkerInfoWindow(mapView, marker);
+            that.setupMarkerInfoWindow(marker);
 
             return marker;
         };
 
         // Sets up an event lister for each marker so that clicking brings
         // up an info window with data about the marker.
-        this.setupMarkerInfoWindow = function(mapView, marker) {
+        that.setupMarkerInfoWindow = function(marker) {
             google.maps.event.addListener(marker, 'click', function(event) {
                 var point = marker.point;
                 var tstamp = "";
@@ -117,67 +123,66 @@ define(function() {
                 var groundSpeed = "";
                 var course = "";
                 if (point.hasOwnProperty("depth")) {
-                    depth = mapView.encode("Depth: " + point.depth + " m") +
+                    depth = that.encode("Depth: " + point.depth + " m") +
                         "<br>";
                 }
                 if (point.hasOwnProperty("water_speed")) {
-                    waterSpeed = mapView.encode("Speed (log): " +
+                    waterSpeed = that.encode("Speed (log): " +
                                                 point.water_speed + " kn") +
                         "<br>";
                 }
                 if (point.hasOwnProperty("ground_speed")) {
-                    groundSpeed = mapView.encode("SOG (GPS speed): " +
+                    groundSpeed = that.encode("SOG (GPS speed): " +
                                            point.ground_speed + " kn") +
                         "<br>";
                 }
                 if (point.hasOwnProperty("course")) {
-                    course = mapView.encode("Course (GPS): " +
+                    course = that.encode("Course (GPS): " +
                                            point.course + "°") +
                         "<br>";
                 }
 
 
-                var infoStr = "<p>" + mapView.encode(tstamp) + "<br>" +
-                    mapView.encode(point.latitude) + " / " +
-                    mapView.encode(point.longitude) + "<br>" +
+                var infoStr = "<p>" + that.encode(tstamp) + "<br>" +
+                    that.encode(point.latitude) + " / " +
+                    that.encode(point.longitude) + "<br>" +
                     depth +
                     waterSpeed +
                     groundSpeed +
                     course +
-                    mapView.encode("position_id: " + point.position_id) +
+                    that.encode("position_id: " + point.position_id) +
                     "<br>" +
-                    mapView.makeSuspectCheckbox(mapView, point) +
+                    that.makeSuspectCheckbox(point) +
                     "</p>";
 
-                mapView.infoWindow.setContent(infoStr);
-                mapView.infoWindow.setPosition(event.latLng);
-                mapView.infoWindow.open(mapView.map);
-                mapView.makeDataValidityCheckboxCallbacks(mapView, point);
+                that.infoWindow.setContent(infoStr);
+                that.infoWindow.setPosition(event.latLng);
+                that.infoWindow.open(that.map);
+                that.makeDataValidityCheckboxCallbacks(point);
             });
         };
 
-        this.makeSuspectCheckbox = function(mapView, point) {
+        that.makeSuspectCheckbox = function(point) {
             return "";
         };
 
-        this.makeDataValidityCheckboxCallbacks = function(mapView, point) {
+        that.makeDataValidityCheckboxCallbacks = function(point) {
         };
 
-        // Hack for getting the correct object to the event listeners.
-        var mv = this;
-
-        google.maps.event.addListener(this.map, 'bounds_changed', function() {
-            if (!mv.dragging) {
-                mv.viewChanged(mv);
+        google.maps.event.addListener(that.map, 'bounds_changed', function() {
+            if (!that.dragging) {
+                viewChanged();
             }
         });
-        google.maps.event.addListener(this.map, 'dragstart', function() {
-            mv.dragging = mv;
+        google.maps.event.addListener(that.map, 'dragstart', function() {
+            that.dragging = true;
         });
-        google.maps.event.addListener(this.map, 'dragend', function() {
-            mv.dragging = false;
-            mv.viewChanged(mv);
+        google.maps.event.addListener(that.map, 'dragend', function() {
+            that.dragging = false;
+            viewChanged();
         });
+
+        return that;
     };
 
     return MapView;

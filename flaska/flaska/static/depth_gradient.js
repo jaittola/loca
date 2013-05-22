@@ -1,32 +1,55 @@
-'use strict';
-
 define(['./hsv2rgb'], function(hsv2rgb) {
+    'use strict';
+
     var DepthGradient = function() {
+        var that = {};
+
+        // Start of the public interface.
+
+        // Get the color corresponding to a depth
+        // from the gradient.
+        that.color = function(depth) {
+            var roundedDepth = Math.ceil(depth);
+
+            if (roundedDepth < 1) {
+                // With depths less than 1 meter, we always round them up
+                // to 1.  The first slot of the gradient is measured for
+                // spots where there is no measurement (required for the
+                // heat map).
+                return depthGradient[1];
+            }
+
+            if (roundedDepth >= depthGradient.length) {
+                // Max value if depth goes over the edge.
+                return depthGradient[depthGradient.length - 1];
+            }
+
+            return depthGradient[roundedDepth];
+        };
+
+        // End of public part.
+
         // End point of the colour scale: depths greater than this
         // value are shown with the maximum color.
-        this.maxDepth = 40;
+        var maxDepth = 40;
 
         // The gradient consists of two color scales. Here's the
         // splitting point.
-        this.heatmapSplit = 10;
+        var heatmapSplit = 10;
 
         // This is the actual gradient. The first slot has alpha set
         // to zero so that a heatmap using this color gradient shows
         // nothing if there are no measurements at a particular
         // coordinate.
-        this.depthGradient = [
+        var depthGradient = [
             "rgba(0, 0, 0, 0)"
         ];
 
-        this.interpolate = function(loop, chunks, start, end) {
+        var interpolate = function(loop, chunks, start, end) {
             return (loop * ((end - start) / chunks)) + start;
         };
 
-        this.depthLegendId = function(cell) {
-            return "depthLegendCell_" + cell;
-        };
-
-        this.depthFigure = function(depth) {
+        var depthFigure = function(depth) {
             var frac = Math.floor(depth % 5.0);
             if (0 != frac) {
                 return ""
@@ -35,27 +58,8 @@ define(['./hsv2rgb'], function(hsv2rgb) {
             return depth;
         };
 
-        this.color = function(depth) {
-            var roundedDepth = Math.ceil(depth);
-
-            if (roundedDepth < 1) {
-                // With depths less than 1 meter, we always round them up
-                // to 1.  The first slot of the gradient is measured for
-                // spots where there is no measurement (required for the
-                // heat map).
-                return this.depthGradient[1];
-            }
-
-            if (roundedDepth >= this.depthGradient.length) {
-                // Max value if depth goes over the edge.
-                return this.depthGradient[this.depthGradient.length - 1];
-            }
-
-            return this.depthGradient[roundedDepth];
-        };
-
         // Build the actual gradient.
-        this.makeGradient = function() {
+        var makeGradient = function() {
             // We make a gradient in Hue-Saturation-Value (HSV) color
             // space. Sat and Value stay constant and we change the color
             // only.
@@ -70,34 +74,36 @@ define(['./hsv2rgb'], function(hsv2rgb) {
             // 2nd part: end with blue.
             var endHue2 = 240;
 
-            for (var i = 0; i < this.heatmapSplit; ++i) {
-                this.depthGradient
-                    .push(hsv2rgb.hsvToRgb(this.interpolate(i,
-                                                            this.heatmapSplit,
-                                                            startHue1,
-                                                            endHue1),
+            for (var i = 0; i < heatmapSplit; ++i) {
+                depthGradient.push(hsv2rgb.hsvToRgb(interpolate(i,
+                                                                heatmapSplit,
+                                                                startHue1,
+                                                                endHue1),
                                            sat, value));
             }
-            for (; i < this.maxDepth; ++i) {
-                this.depthGradient
-                    .push(hsv2rgb.hsvToRgb(this.interpolate(i,
-                                                            this.maxDepth,
-                                                            endHue1,
-                                                            endHue2),
-                                           sat, value));
+            for (; i < maxDepth; ++i) {
+                depthGradient.push(hsv2rgb.hsvToRgb(interpolate(i,
+                                                                maxDepth,
+                                                                endHue1,
+                                                                endHue2),
+                                                    sat, value));
             }
+        };
+
+        var depthLegendId = function(cell) {
+            return "depthLegendCell_" + cell;
         };
 
         // Build a table of depth legends. The background color of each
         // table cell is the same that is shown on the map for the same
         // depth. Every fifth cell has the depth figure.
-        this.makeDepthLegend = function() {
+        var makeDepthLegend = function() {
             var cells = "";
 
-            for (var i = 0; i < this.depthGradient.length; ++i) {
+            for (var i = 0; i < depthGradient.length; ++i) {
                 cells = cells +
-                    "<td id=\"" + this.depthLegendId(i) + "\">" +
-                    this.depthFigure(i) + "</td>";
+                    "<td id=\"" + depthLegendId(i) + "\">" +
+                    depthFigure(i) + "</td>";
             }
 
             var tablestring =
@@ -115,23 +121,25 @@ define(['./hsv2rgb'], function(hsv2rgb) {
             // put the second field of the gradient there twice.
 
             // First column
-            $("#" + this.depthLegendId(0))
-                .css({"background-color": this.depthGradient[1],
+            $("#" + depthLegendId(0))
+                .css({"background-color": depthGradient[1],
                       "width": "1em",
                       "text-align": "right"});
 
             // Other columns.
-            for (var i = 1; i < this.depthGradient.length; ++i) {
-                $("#" + this.depthLegendId(i))
-                    .css({"background-color": this.depthGradient[i],
+            for (var i = 1; i < depthGradient.length; ++i) {
+                $("#" + depthLegendId(i))
+                    .css({"background-color": depthGradient[i],
                           "width": "1em",
                           "text-align": "right"});
             }
         };
 
         // Create the gradient and the depth legend elements.
-        this.makeGradient();
-        this.makeDepthLegend();
+        makeGradient();
+        makeDepthLegend();
+
+        return that;
     };
 
     return DepthGradient;

@@ -14,33 +14,35 @@
  */
 
 
-define({
+define(function() {
+    var hsv2rgb = {};
+
     /**
      * Translate a float value between 0 - 1.0 to a hexadecimal number
      * between 0 - 0xff.
      */
-    fToHex: function(floatVal) {
+    hsv2rgb.fToHex = function(floatVal) {
         var s = Math.round(floatVal * 255).toString(16)
         if (s.length < 2) {
             return "0" + s;
         }
         return s;
-    },
+    };
 
     /**
      * Translate r, g, b values (that are in floating point between 0 - 0.1)
      * to an rgb string. (#rrggbb).
      */
-    rgbResult: function(r, g, b) {
-        return "#" + this.fToHex(r) + this.fToHex(g) + this.fToHex(b);
-    },
+    hsv2rgb.rgbResult = function(r, g, b) {
+        return "#" + hsv2rgb.fToHex(r) + hsv2rgb.fToHex(g) + hsv2rgb.fToHex(b);
+    };
 
     /**
      * Convert hsv to RGB.
      * h = [0, 359]
      * s, v = [0, 100]
      */
-    hsvToRgb: function(h, s, v) {
+    hsv2rgb.hsvToRgb = function(h, s, v) {
         var r, g, b;
         var i;
         var f, p, q, t;
@@ -107,6 +109,8 @@ define({
             b = q;
         }
 
-        return this.rgbResult(r, g, b);
-    },
+        return hsv2rgb.rgbResult(r, g, b);
+    };
+
+    return hsv2rgb;
 })
