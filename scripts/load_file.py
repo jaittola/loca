@@ -210,8 +210,9 @@ def load_data(db, input_info, trip_id):
 
 def update_depth_display_ranges(db, trip_id):
     dr_cursor = db.cursor()
-
     dr_cursor.execute("SELECT update_depth_display_ranges(%s)",
+                      (trip_id, ))
+    dr_cursor.execute("SELECT update_position_display_ranges(%s)",
                       (trip_id, ))
     dr_cursor.close()
 
