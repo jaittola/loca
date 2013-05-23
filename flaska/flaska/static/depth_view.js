@@ -92,18 +92,12 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
         // Load the depth data. This is the main function herein. This
         // function gets called whenever the map is zoomed or panned.
         that.update = function() {
-            for (var posId in depthMarkers) {
-                if (depthMarkers.hasOwnProperty(posId)) {
-                    var marker = depthMarkers[posId];
-                    if (!that.isInView(marker.point)) {
-                        // This point is outside the current view => remove.
-                        marker.setMap(null);
-                        delete depthMarkers[posId];
-                    }
-                }
-            }
+            that.dropPointsOutsideBounds(depthMarkers);
 
-            queryDepthData(function(depthData) {
+            var path = "/api/1/depth_data/" +
+                that.getMapParams();
+
+            $.getJSON(path, function(depthData) {
                 $.each(depthData.depths, function(i, point) {
                     if (depthMarkers.hasOwnProperty(point.position_id)) {
                         // Skip the ones that we have already.
@@ -167,51 +161,6 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
                     reFilterMeasurements();
                 });
             });
-        };
-
-        // Utility for creating the URL for loading depth data.
-        var getDepthDataUrl = function(bounds, zoom) {
-            var neCorner = bounds.getNorthEast();
-            var swCorner = bounds.getSouthWest();
-
-            // This is the conversion factor from latitude degrees
-            // (in the north-south direction) to meters.
-            var latDegToMeters = 111317.0;
-
-            var mPerPix = ((neCorner.lat() - swCorner.lat()) *
-                           latDegToMeters) /
-                $("#map_canvas").height();
-
-            // This is empirical (and could be considered rubbish): The size
-            // of the circles that we use as depth markers increases with
-            // smaller zoom levels. Hence we need to increase the mPerPix
-            // figure somehow so that we do not load data unnecessarily.
-            if (zoom < 14) {
-                mPerPix = mPerPix * 2.0;
-            }
-            else if (zoom < 11) {
-                mPerPix = mPerPix * 4.0;
-            }
-
-            return "/api/1/depth_data/" +
-                "?lat0=" + swCorner.lat() +
-                "&lon0=" + swCorner.lng() +
-                "&lat1=" + neCorner.lat() +
-                "&lon1=" + neCorner.lng() +
-                "&mPerPix=" + mPerPix;
-        };
-
-        // Load depth data
-        var queryDepthData = function(itemCallback) {
-            var bounds = that.map.getBounds();
-            if (null == bounds || undefined == bounds) {
-                alert("Map bounds are not available. Cannot show any data. " +
-                      "Please change the zoom level or reload the map");
-                return;
-            }
-
-            $.getJSON(getDepthDataUrl(bounds, that.map.getZoom()),
-                      itemCallback);
         };
 
         setupControlPanel();

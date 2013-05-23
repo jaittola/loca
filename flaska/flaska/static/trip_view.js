@@ -10,11 +10,17 @@ define(["map_view"], function(MapView) {
         // Dots on the map.
         var points = {};
 
+        // Trips currently selected.
+        var tripsInView = {};
+
         // Re-implemented from the base class.
         that.update = function() {
-            for (var posId in points) {
-                if (points.hasOwnProperty(posId)) {
-                    showOnMap(points[posId]);
+            that.dropPointsOutsideBounds(points);
+
+            for (var tripId in tripsInView) {
+                if (tripsInView.hasOwnProperty(tripId) &&
+                    tripsInView[tripId] === true) {
+                    downloadAndShow(tripId);
                 }
             }
         }
@@ -25,36 +31,46 @@ define(["map_view"], function(MapView) {
                 $("#controls").html("<p>Latest trips:</p> " +
                                     '<form id="latestTripsForm"></form>');
                 $.each(tripData.trips, function(i, trip) {
-                    var trip_id = that.encode(trip.trip_id);
+                    var tripId = that.encode(trip.trip_id);
                     var tripString =
                         '<input type="checkbox" ' +
-                        'id="tripEnabled' + trip_id +
-                        '" value="' + trip_id + '">' +
+                        'id="tripEnabled' + tripId +
+                        '" value="' + tripId + '">' +
                         that.encode(trip.vessel_name) + " " +
                         that.encode(trip.trip_date) + " " +
                         that.encode(trip.trip_name) +
                         "<br>";
                     $("#latestTripsForm").append(tripString);
-                    makeTripDisplayCallback(trip_id);
+                    makeTripDisplayCallback(tripId);
                 });
             });
         }
 
-        var makeTripDisplayCallback = function(trip_id) {
-            $("#tripEnabled" + trip_id).click(function() {
+        var makeTripDisplayCallback = function(tripId) {
+            $("#tripEnabled" + tripId).click(function() {
                 if (this.checked) {
-                    downloadAndShow(trip_id);
+                    tripsInView[tripId] = true;
+                    that.update();
                 }
                 else {
-                    dropTrip(trip_id);
+                    dropTrip(tripId);
                 }
             });
         };
 
-        var downloadAndShow = function(trip_id) {
-            var path = "/api/1/trip/" + that.encode(trip_id);
+        var downloadAndShow = function(tripId) {
+            var path = "/api/1/trip/" +
+                that.encode(tripId) +
+                that.getMapParams();
+
             $.getJSON(path, function(tripData) {
                 $.each(tripData.points, function(i, point) {
+                    if (points.hasOwnProperty(point.position_id)) {
+                        // Skip the ones that we have already.
+                        return;
+                    }
+
+                    point.tripId = tripId;
                     var marker = that.makeMarker(point, "#ff0000");
                     showOnMap(marker);
                     points[point.position_id] = marker;
@@ -62,12 +78,15 @@ define(["map_view"], function(MapView) {
             });
         };
 
-        var dropTrip = function(trip_id) {
+        var dropTrip = function(tripId) {
+            tripsInView[tripId] = false;
             for (var posId in points) {
                 if (points.hasOwnProperty(posId)) {
                     var point = points[posId];
-                    point.setMap(null);
-                    delete points[posId];
+                    if (point.point.tripId === tripId) {
+                        point.setMap(null);
+                        delete points[posId];
+                    }
                 }
             }
         };

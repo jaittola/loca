@@ -48,6 +48,49 @@ END;
 $$
 LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION
+update_position_display_ranges(trip_id_ INTEGER)
+RETURNS void AS $$
+DECLARE
+    prev_lat DOUBLE PRECISION;
+    prev_lon DOUBLE PRECISION;
+    pos RECORD;
+    range RECORD;
+BEGIN
+    FOR range IN SELECT * FROM display_ranges ORDER BY range DESC
+    LOOP
+        prev_lat := NULL;
+        prev_lon := NULL;
+
+        FOR pos IN SELECT id, latitude, longitude, display_range
+                       FROM position
+                       WHERE trip_id = trip_id_
+                       ORDER BY id
+        LOOP
+            -- 1. First pos of the trip: unconditionally put range to max
+            --    if it has no previous display_range
+            -- 2. If pos is farther from the previous marked one than
+            --    the display_range.*_range suggest and has no previous
+            --    display_range, set it to current.
+
+            IF (prev_lat IS NULL AND pos.display_range < range.range) OR
+                ((pos.latitude > prev_lat + range.lat_range OR
+                  pos.latitude < prev_lat - range.lat_range OR
+                  pos.longitude > prev_lon + range.lon_range OR
+                  pos.longitude < prev_lon - range.lon_range) AND
+                 pos.display_range < range.range) THEN
+
+                UPDATE position SET display_range = range.range
+                    WHERE id = pos.id;
+
+                prev_lat := pos.latitude;
+                prev_lon := pos.longitude;
+            END IF;
+        END LOOP;
+   END LOOP;
+END;
+$$
+LANGUAGE plpgsql;
 
 -- Return the display range closest to the meters/pixel value
 -- provided by the client.

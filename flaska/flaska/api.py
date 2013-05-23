@@ -15,12 +15,18 @@ def depth_data():
     coord_range = fetch_coord_range(mandatory=True)
     depths = db_depths_fetch(g.db,
                              coord_range,
-                             request.args.get("mPerPix", default=0, type=float))
+                             request.args.get("mPerPix", default=400,
+                                              type=float))
     return json_response({ "depths": depths })
 
 @app.route("/api/1/trip/<int:trip_id>")
 def trip(trip_id):
-    trip_points = db_trip_points_fetch(g.db, trip_id)
+    coord_range = fetch_coord_range(mandatory=False)
+    trip_points = db_trip_points_fetch(g.db,
+                                       trip_id,
+                                       coord_range,
+                                       request.args.get("mPerPix", default=400,
+                                                        type=float))
     return json_response( { "trip_id": trip_id,
                             "points": trip_points } )
 
@@ -34,7 +40,6 @@ def list_trips():
 @login_required
 def update_measurement(position_id):
     if request.json is None:
-        print "NO JSON"
         abort(400)
 
     depth_erroneous = request.json.get("depth_erroneous")

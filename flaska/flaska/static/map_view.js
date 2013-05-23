@@ -38,6 +38,20 @@ define(function() {
         // To be re-implemented in the inherited classes.
         that.update = function() { };
 
+        // Utility that goes through the points and removes those
+        // that are no longer in the view.
+        that.dropPointsOutsideBounds = function(points) {
+            for (var posId in points) {
+                if (points.hasOwnProperty(posId)) {
+                    var point = points[posId];
+                    if (!that.isInView(point.point)) {
+                        point.setMap(null);
+                        delete points[posId];
+                    }
+                }
+            }
+        };
+
         // Called when the viewport of the map changes because of
         // panning or zooming. Updates the current position into a
         // cookie, and calls the update function.
@@ -167,6 +181,39 @@ define(function() {
         };
 
         that.makeDataValidityCheckboxCallbacks = function(point) {
+        };
+
+        // Utility for creating the URL for loading depth data.
+        that.getMapParams = function() {
+            var bounds = that.map.getBounds();
+            var neCorner = bounds.getNorthEast();
+            var swCorner = bounds.getSouthWest();
+            var zoom = that.map.getZoom();
+
+            // This is the conversion factor from latitude degrees
+            // (in the north-south direction) to meters.
+            var latDegToMeters = 111317.0;
+
+            var mPerPix = ((neCorner.lat() - swCorner.lat()) *
+                           latDegToMeters) /
+                $("#map_canvas").height();
+
+            // This is empirical (and could be considered rubbish): The size
+            // of the circles that we use as depth markers increases with
+            // smaller zoom levels. Hence we need to increase the mPerPix
+            // figure somehow so that we do not load data unnecessarily.
+            if (zoom < 14) {
+                mPerPix = mPerPix * 2.0;
+            }
+            else if (zoom < 11) {
+                mPerPix = mPerPix * 4.0;
+            }
+
+            return "?lat0=" + swCorner.lat() +
+                "&lon0=" + swCorner.lng() +
+                "&lat1=" + neCorner.lat() +
+                "&lon1=" + neCorner.lng() +
+                "&mPerPix=" + mPerPix;
         };
 
         google.maps.event.addListener(that.map, 'bounds_changed', function() {

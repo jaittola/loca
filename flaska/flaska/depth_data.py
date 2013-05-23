@@ -75,24 +75,44 @@ def db_triplist_fetch(db, limit=10):
 
     return trips
 
-def db_trip_points_fetch(db, trip_id):
+def db_trip_points_fetch(db,
+                         trip_id,
+                         coord_range,
+                         m_per_pix):
+    bind_tuple = (trip_id,
+                  m_per_pix)
+    coord_range_cond = ""
+
+    if coord_range:
+        coord_range_cond = \
+            "p.latitude > %s and p.latitude < %s " \
+            "AND p.longitude > %s and p.longitude < %s AND "
+        bind_tuple = (coord_range["lat0"], coord_range["lat1"],
+                      coord_range["lon0"], coord_range["lon1"],
+                      trip_id,
+                      m_per_pix)
+
+    query = "SELECT p.id AS position_id, " \
+        "to_char(p.pos_time_utc, 'YYYYMMDDHH24MISS') AS pos_time_utc, " \
+        "p.latitude AS latitude, " \
+        "p.longitude AS longitude, " \
+        "p.erroneous AS pos_erroneous, " \
+        "ws.id AS water_speed_id, " \
+        "ws.speed AS water_speed, " \
+        "gs.id AS ground_speed_id, " \
+        "gs.speed AS ground_speed, " \
+        "gs.course AS course, " \
+        "gs.erroneous AS ground_speed_erroneous " \
+        "FROM position p " \
+        "JOIN water_speed ws ON p.id = ws.position_id " \
+        "JOIN ground_speed_course gs ON p.id = gs.position_id " + \
+        "WHERE " + \
+        coord_range_cond + \
+        "p.trip_id = %s " \
+        "AND p.display_range >= get_display_range(%s) "
+
     cur = db_rd_cursor(db)
-    cur.execute("SELECT p.id AS position_id, "
-                "to_char(p.pos_time_utc, 'YYYYMMDDHH24MISS') AS pos_time_utc, "
-                "p.latitude AS latitude, "
-                "p.longitude AS longitude, "
-                "p.erroneous AS pos_erroneous, "
-                "ws.id AS water_speed_id, "
-                "ws.speed AS water_speed, "
-                "gs.id AS ground_speed_id, "
-                "gs.speed AS ground_speed, "
-                "gs.course AS course, "
-                "gs.erroneous AS ground_speed_erroneous "
-                "FROM position p "
-                "JOIN water_speed ws ON p.id = ws.position_id "
-                "JOIN ground_speed_course gs ON p.id = gs.position_id "
-                "WHERE p.trip_id = %s",
-                (trip_id, ))
+    cur.execute(query, bind_tuple)
     points = cur.fetchall()
     db.commit()
     cur.close()
