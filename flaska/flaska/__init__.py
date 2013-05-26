@@ -19,6 +19,7 @@ login_manager.login_view = '/login/'
 import flaska.views
 import flaska.api
 import flaska.login_controller
+import flaska.files
 
 from flaska.depth_data import db_conn, db_disconn
 

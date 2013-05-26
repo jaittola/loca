@@ -14,6 +14,7 @@ class TemplateVars():
         self.root = url_for("root")
         self.depth_map = url_for("depth_map")
         self.trip_map = url_for("trip_map")
+        self.upload_form = url_for("upload_form")
         self.user_email = current_user.get_email() \
             if current_user.is_authenticated() \
             else None

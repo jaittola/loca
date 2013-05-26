@@ -41,10 +41,13 @@
     </script>
   </head>
   <body>
+    <!-- TODO, nav links and user_info have been copypasted.
+         Move them to a common snippet -->
     <div id="nav_links">
       {% if vars.user_email %}
       <a href="{{ vars.trip_map }}">Latest trips</a>
       <a href="{{ vars.depth_map }}">Depths</a>
+      <a href="{{ vars.upload_form }}">Upload GPS data</a>
       {% endif %}
       &nbsp;
     </div>

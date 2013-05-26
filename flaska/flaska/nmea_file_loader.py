@@ -107,7 +107,7 @@ def writeout_waterspeed(db, position_id, fields):
     speed_unit = fields[6]
 
     if 'N' != speed_unit:
-        raise Exception("Unknown speed unit %{0}".format(speed_unit))
+        raise Exception("Unknown speed unit {0}".format(speed_unit))
 
     speed_cursor = db.cursor()
     speed_cursor.execute("INSERT INTO water_speed "
@@ -131,7 +131,7 @@ def writeout_cog_and_sog(db, position_id, fields):
     speed_unit = fields[6]
 
     if 'N' != speed_unit:
-        raise Exception("Unknown speed unit %{0}".format(speed_unit))
+        raise Exception("Unknown speed unit {0}".format(speed_unit))
 
     cogsog_cursor = db.cursor()
     cogsog_cursor.execute("INSERT INTO ground_speed_course "
@@ -166,8 +166,13 @@ def read_input(db, trip_id, input_info, input):
                 writeout_cog_and_sog(db, position_id, fields)
 
     except Exception,ex:
-        sys.stderr.write("Failure on line {0}\n".format(linenum));
-        raise
+        raise Exception("Failure on line {0} of the input file: {1}"
+                        .format(linenum, ex));
+
+    if -1 == position_id:
+        # No valid positions found: fail so that everything (including
+        # the metadata) gets rolled back.
+        raise Exception("No valid data rows found")
 
 def fetch_user_id(db, user_email):
     userid_cursor = db.cursor()
@@ -181,8 +186,9 @@ def fetch_user_id(db, user_email):
         raise Exception("Unknown user e-mail address")
     return user_info[0]
 
-def setup_trip(db, input_info):
-    user_id = fetch_user_id(db, input_info.user_email)
+def setup_trip(db, input_info, user_id=None):
+    if user_id is None:
+        user_id = fetch_user_id(db, input_info.user_email)
 
     trip_cursor = db.cursor()
     trip_cursor.execute("INSERT INTO trip "
@@ -216,6 +222,45 @@ def update_depth_display_ranges(db, trip_id):
                       (trip_id, ))
     dr_cursor.close()
 
+def do_file_loading(context, db, input_info, user_id=None):
+    try:
+        trip_id = setup_trip(db, input_info, user_id)
+        context.log("Loading data ...")
+        load_data(db, input_info, trip_id)
+        db.commit()
+        context.log("Loaded. Now performing display range modifications ...")
+        update_depth_display_ranges(db, trip_id)
+        db.commit()
+        context.log("Done.")
+        return True
+    except Exception,ex:
+        context.log_err("Loading data failed: {0}".format(ex));
+        db.rollback()
+        return False
+
+class TTYContext:
+    def log(self, msg):
+        print(msg)
+
+    def log_err(self, msg):
+        sys.stderr.write("{}\n".format(msg))
+
+class AppContext:
+    def __init__(self):
+        self.logmsgs = []
+        self.errmsgs = []
+
+    def log(self, msg):
+        self.logmsgs.append(msg)
+
+    def log_err(self, msg):
+        self.errmsgs.append(msg)
+
+    def error_msg(self):
+        if 0 == len(self.errmsgs):
+            return None
+        return " ".join(self.errmsgs)
+
 def main():
     parser = argparse.ArgumentParser(description="Read NMEA data and write it "
                                      "into database.")
@@ -245,24 +290,10 @@ def main():
         sys.stderr.write("Connecting to database failed.\n")
         sys.exit(1)
 
-    result = 0
-
-    try:
-        trip_id = setup_trip(db, input_info)
-        print("Loading data ...")
-        load_data(db, input_info, trip_id)
-        db.commit()
-        print("Loaded. Now performing display range modifications ...")
-        update_depth_display_ranges(db, trip_id)
-        db.commit()
-        print("Done.")
-    except Exception,ex:
-        sys.stderr.write("Loading data failed: {0}\n".format(ex));
-        db.rollback()
-        result = 1
+    result = do_file_loading(db, input_info)
 
     db.close()
-    return result
+    sys.exit(0 if True == result else 1)
 
 def db_conn(db_name, db_user, db_passwd):
     return psycopg2.connect("dbname={} user={} password={}"
