@@ -58,20 +58,22 @@ def upload_form():
         form.data_file.data.save(output_f)
         output_f.close()
 
-        if do_file_loading(app_ctx,
-                           g.db,
+        if do_file_loading(g.db,
                            # TODO, should user user's id directly
                            # and not e-mail.
                            InputInfo(user_email=current_user.get_email(),
                                      input_file=filename,
                                      trip_name=form.trip_name.data,
                                      trip_date=form.trip_date.data,
-                                     vessel_name=form.vessel_name.data)):
+                                     vessel_name=form.vessel_name.data),
+                           context=app_ctx):
             success_msg = "File uploaded successfully"
+        else:
+            success_msg = app_ctx.get_log_msgs()
 
     return render_template("upload_form.html",
                            success_msg=success_msg,
-                           error_msg=app_ctx.error_msg(),
+                           error_msg=app_ctx.get_error_msgs(),
                            form=form,
                            vars=TemplateVars(app))
 

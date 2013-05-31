@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
+import gzip
+import magic
 import sys
 
 import psycopg2
@@ -207,12 +209,18 @@ def setup_trip(db, input_info, user_id=None):
         raise Exception("Inserting trip info failed")
     return trip_data[0]
 
-def load_data(db, input_info, trip_id):
+def load_data(context, db, input_info, trip_id):
     if input_info.input_file == "-":
         read_input(db, trip_id, input_info, sys.stdin)
     else:
-        with open(input_info.input_file) as input:
-            read_input(db, trip_id, input_info, input)
+        load_data_file(context, db, input_info, trip_id)
+
+def load_data_file(context, db, input_info, trip_id):
+    mimetype = magic.from_file(input_info.input_file, mime=True)
+    fo = gzip.open if mimetype and mimetype == "application/x-gzip" \
+        else open
+    with fo(input_info.input_file) as input:
+        read_input(db, trip_id, input_info, input)
 
 def update_depth_display_ranges(db, trip_id):
     dr_cursor = db.cursor()
@@ -222,11 +230,15 @@ def update_depth_display_ranges(db, trip_id):
                       (trip_id, ))
     dr_cursor.close()
 
-def do_file_loading(context, db, input_info, user_id=None):
+def do_file_loading(db, input_info,
+                    context=None,
+                    user_id=None):
+    context = context or TTYContext()
+
     try:
         trip_id = setup_trip(db, input_info, user_id)
         context.log("Loading data ...")
-        load_data(db, input_info, trip_id)
+        load_data(context, db, input_info, trip_id)
         db.commit()
         context.log("Loaded. Now performing display range modifications ...")
         update_depth_display_ranges(db, trip_id)
@@ -256,10 +268,15 @@ class AppContext:
     def log_err(self, msg):
         self.errmsgs.append(msg)
 
-    def error_msg(self):
+    def get_error_msgs(self):
         if 0 == len(self.errmsgs):
             return None
         return " ".join(self.errmsgs)
+
+    def get_log_msgs(self):
+        if 0 == len(self.logmsgs):
+            return None
+        return " ".join(self.logmsgs)
 
 def main():
     parser = argparse.ArgumentParser(description="Read NMEA data and write it "
