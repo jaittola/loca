@@ -2,7 +2,9 @@
 from flask import Flask, g
 from flask_login import LoginManager
 
+import logging
 import os
+import sys
 
 app = Flask(__name__)
 
@@ -15,6 +17,9 @@ if 'FLK_CONFIG' in os.environ:
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = '/login/'
+
+# Set up logs
+app.logger.addHandler(logging.StreamHandler(stream=sys.stderr))
 
 import flaska.views
 import flaska.api
