@@ -105,25 +105,6 @@ $$
 LANGUAGE SQL;
 
 
--- Get the depth_id of the row that has the
--- smallest depth within an area.
-CREATE OR REPLACE FUNCTION
-get_min_depth_id(center_latitude DOUBLE PRECISION,
-                 center_longitude DOUBLE PRECISION,
-                 display_range INTEGER)
-RETURNS INTEGER
-AS $$
-    WITH depths AS (SELECT id AS depth_id,
-                    depth,
-                    row_number() OVER (ORDER BY depth) AS rnum
-                    FROM depth
-                    WHERE position_id IN (SELECT * FROM
-                                          get_positions_in_area($1, $2, $3)))
-    SELECT depth_id FROM depths WHERE rnum = 1;
-$$
-LANGUAGE SQL;
-
-
 -- Select position IDs that are within an area defined by
 -- center_latitude, center_longitude, and display_range, which refers
 -- to the display_ranges table.
@@ -153,6 +134,25 @@ BEGIN
 END;
 $$
 LANGUAGE plpgsql;
+
+
+-- Get the depth_id of the row that has the
+-- smallest depth within an area.
+CREATE OR REPLACE FUNCTION
+get_min_depth_id(center_latitude DOUBLE PRECISION,
+                 center_longitude DOUBLE PRECISION,
+                 display_range INTEGER)
+RETURNS INTEGER
+AS $$
+    WITH depths AS (SELECT id AS depth_id,
+                    depth,
+                    row_number() OVER (ORDER BY depth) AS rnum
+                    FROM depth
+                    WHERE position_id IN (SELECT * FROM
+                                          get_positions_in_area($1, $2, $3)))
+    SELECT depth_id FROM depths WHERE rnum = 1;
+$$
+LANGUAGE SQL;
 
 
 CREATE OR REPLACE FUNCTION calc_display_range(range INTEGER)
