@@ -41,22 +41,22 @@ define(["map_view"], function(MapView) {
                         that.encode(trip.trip_name) +
                         "<br>";
                     $("#latestTripsForm").append(tripString);
-                    makeTripDisplayCallback(tripId);
+                    $("#tripEnabled" + tripId)
+                        .click(tripDisplayCallback);
                 });
             });
         }
 
-        var makeTripDisplayCallback = function(tripId) {
-            $("#tripEnabled" + tripId).click(function() {
-                if (this.checked) {
-                    tripsInView[tripId] = true;
-                    that.update();
-                }
-                else {
-                    dropTrip(tripId);
-                }
-            });
-        };
+	var tripDisplayCallback = function(ev) {
+            var tripId = ev.currentTarget.value;
+            if (this.checked) {
+                tripsInView[tripId] = true;
+                that.update();
+            }
+            else {
+                dropTrip(tripId);
+            }
+        }
 
         var downloadAndShow = function(tripId) {
             var path = "/api/1/trip/" +
