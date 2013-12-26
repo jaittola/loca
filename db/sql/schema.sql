@@ -11,9 +11,9 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS trip (
    id SERIAL PRIMARY KEY,
    user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE SET NULL,
-   trip_name TEXT,
-   trip_date DATE,
-   vessel_name TEXT
+   trip_name TEXT NOT NULL DEFAULT '',
+   trip_date DATE NOT NULL DEFAULT CURRENT_DATE,
+   vessel_name TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS position (

@@ -3,7 +3,9 @@
 import argparse
 import gzip
 import magic
+import re
 import sys
+import time
 
 import psycopg2
 
@@ -278,6 +280,21 @@ class AppContext:
             return None
         return " ".join(self.logmsgs)
 
+def today():
+    return time.strftime("%Y-%m-%d")
+
+def augment_args(input_info):
+    if not input_info.trip_date:
+        input_info.trip_date = today()  # Use this as default
+        if 'input_file' in input_info:
+            rm = re.search("([0-9]{4}-[0-9]{2}-[0-9]{2})",
+                           input_info.input_file)
+            if rm:
+                input_info.trip_date = rm.group(1)
+    if not input_info.trip_name:
+        input_info.trip_name = input_info.input_file or "[empty]"
+    return input_info
+
 def main():
     parser = argparse.ArgumentParser(description="Read NMEA data and write it "
                                      "into database.")
@@ -285,22 +302,23 @@ def main():
                         type=str,
                         help="Name of input file. Use - for stdin")
     parser.add_argument('-t', '--date', dest="trip_date",
-                        help="The date of this trip",
-                        required=True)
+                        help="The date of this trip")
     parser.add_argument('-e', '--email', dest="user_email",
                         help="The e-mail address of the application user",
                         required=True)
     parser.add_argument('-n', '--name', dest="trip_name",
-                        help="A name or description for the trip")
+                        help="A name or description for the trip",
+                        default='')
     parser.add_argument('-s', '--vessel', dest="vessel_name",
-                        help="The name of the vessel")
+                        help="The name of the vessel",
+                        default='')
     parser.add_argument('-d', '--db-name', dest="db_name",
                         help="Database name")
     parser.add_argument('-u', '--db-user', dest="db_user",
                         help="Database user name")
     parser.add_argument('-p', '--db-passwd', dest="db_passwd",
                         help="Database password")
-    input_info = parser.parse_args()
+    input_info = augment_args(parser.parse_args())
 
     db = db_conn(input_info.db_name, input_info.db_user, input_info.db_passwd)
     if db is None:
