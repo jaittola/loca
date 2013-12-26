@@ -82,10 +82,10 @@ define(function() {
             var neCorner = bounds.getNorthEast();
             var swCorner = bounds.getSouthWest();
 
-            if (point.latitude < neCorner.lat() &&
-                point.latitude > swCorner.lat() &&
-                point.longitude < neCorner.lng() &&
-                point.longitude > swCorner.lng()) {
+            if (point.lat < neCorner.lat() &&
+                point.lat > swCorner.lat() &&
+                point.lon < neCorner.lng() &&
+                point.lon > swCorner.lng()) {
                 return true;
             }
             return false;
@@ -94,8 +94,8 @@ define(function() {
         // Make a marker at the specified position and color.
         that.makeMarker = function(point, color) {
             var marker = new google.maps.Marker({
-                position: new google.maps.LatLng(point.latitude,
-                                                 point.longitude),
+                position: new google.maps.LatLng(point.lat,
+                                                 point.lon),
                 flat: true,
                 visible: true,
                 icon: {fillColor: color,
@@ -116,19 +116,19 @@ define(function() {
                 var point = marker.point;
                 var tstamp = "";
                 // "yyyymmddhhmiss".length == 14
-                if (point.pos_time_utc.length == 14) {
+                if (point.t_utc.length == 14) {
                     tstamp =
-                        point.pos_time_utc.substr(0, 4) +
+                        point.t_utc.substr(0, 4) +
                         "-" +
-                        point.pos_time_utc.substr(4, 2) +
+                        point.t_utc.substr(4, 2) +
                         "-" +
-                        point.pos_time_utc.substr(6, 2) +
+                        point.t_utc.substr(6, 2) +
                         " " +
-                        point.pos_time_utc.substr(8, 2) +
+                        point.t_utc.substr(8, 2) +
                         ":" +
-                        point.pos_time_utc.substr(10, 2) +
+                        point.t_utc.substr(10, 2) +
                         ":" +
-                        point.pos_time_utc.substr(12, 2) +
+                        point.t_utc.substr(12, 2) +
                         " UTC";
                 }
 
@@ -140,14 +140,14 @@ define(function() {
                     depth = that.encode("Depth: " + point.depth + " m") +
                         "<br>";
                 }
-                if (point.hasOwnProperty("water_speed")) {
+                if (point.hasOwnProperty("ws")) {
                     waterSpeed = that.encode("Speed (log): " +
-                                                point.water_speed + " kn") +
+                                                point.ws + " kn") +
                         "<br>";
                 }
-                if (point.hasOwnProperty("ground_speed")) {
+                if (point.hasOwnProperty("gs")) {
                     groundSpeed = that.encode("SOG (GPS speed): " +
-                                           point.ground_speed + " kn") +
+                                           point.gs + " kn") +
                         "<br>";
                 }
                 if (point.hasOwnProperty("course")) {
@@ -158,13 +158,13 @@ define(function() {
 
 
                 var infoStr = "<p>" + that.encode(tstamp) + "<br>" +
-                    that.encode(point.latitude) + " / " +
-                    that.encode(point.longitude) + "<br>" +
+                    that.encode(point.lat) + " / " +
+                    that.encode(point.lon) + "<br>" +
                     depth +
                     waterSpeed +
                     groundSpeed +
                     course +
-                    that.encode("position_id: " + point.position_id) +
+                    that.encode("position_id: " + point.p_id) +
                     "<br>" +
                     that.makeSuspectCheckbox(point) +
                     "</p>";

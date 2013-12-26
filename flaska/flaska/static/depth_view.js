@@ -33,32 +33,32 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
                 var point = marker.point;
                 var tstamp = "";
                 // "yyyymmddhhmiss".length == 14
-                if (point.pos_time_utc.length == 14) {
+                if (point.t_utc.length == 14) {
                     tstamp =
-                        point.pos_time_utc.substr(0, 4) +
+                        point.t_utc.substr(0, 4) +
                         "-" +
-                        point.pos_time_utc.substr(4, 2) +
+                        point.t_utc.substr(4, 2) +
                         "-" +
-                        point.pos_time_utc.substr(6, 2) +
+                        point.t_utc.substr(6, 2) +
                         " " +
-                        point.pos_time_utc.substr(8, 2) +
+                        point.t_utc.substr(8, 2) +
                         ":" +
-                        point.pos_time_utc.substr(10, 2) +
+                        point.t_utc.substr(10, 2) +
                         ":" +
-                        point.pos_time_utc.substr(12, 2) +
+                        point.t_utc.substr(12, 2) +
                         " UTC";
                 }
 
                 var depth = "Depth: " + point.depth + "m";
-                var lat = point.latitude;
-                var lon = point.longitude;
+                var lat = point.lat;
+                var lon = point.lon;
 
                 var infoStr = "<p>" + that.encode(tstamp) + "<br>" +
                     that.encode(lat) + " / " +
                     that.encode(lon) + "<br>" +
                     that.encode(depth) +
                     "<br>" +
-                    that.encode("position_id: " + point.position_id) +
+                    that.encode("position_id: " + point.p_id) +
                     "<br>" +
                     that.makeSuspectCheckbox(point) +
                     "</p>";
@@ -78,13 +78,13 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
                 '" class="' +
                 validDepthCheckboxName +
                 '" value="1"' +
-                (point.depth_erroneous ? '' : 'checked="1"') +
+                (point.d_bad ? '' : 'checked="1"') +
                 "></form>";
         };
 
         that.makeDataValidityCheckboxCallbacks = function(point) {
             $("." + validDepthCheckboxName).click(function() {
-                point.depth_erroneous = !(that.checked);
+                point.d_bad = !(that.checked);
                 updateMeasurementValidity(point);
             });
         };
@@ -99,7 +99,7 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
 
             $.getJSON(path, function(depthData) {
                 $.each(depthData.depths, function(i, point) {
-                    if (depthMarkers.hasOwnProperty(point.position_id)) {
+                    if (depthMarkers.hasOwnProperty(point.p_id)) {
                         // Skip the ones that we have already.
                         return;
                     }
@@ -108,16 +108,16 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
                     var marker = that.makeMarker(point, color);
                     setToMap(marker);
 
-                    depthMarkers[point.position_id] = marker;
+                    depthMarkers[point.p_id] = marker;
                 });
             });
         };
 
         var updateMeasurementValidity = function(point) {
-            $.ajax({ url: "/api/1/measurement/" + point.position_id,
+            $.ajax({ url: "/api/1/measurement/" + point.p_id,
                      type: "POST",
                      data: JSON.stringify({
-                         depth_erroneous: point.depth_erroneous }),
+                         depth_erroneous: point.d_bad }),
                      dataType: "json",
                      contentType: "application/json; charset=utf-8",
                      success: reFilterMeasurements,
@@ -130,9 +130,9 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
 
             if (measurementDisplayStatus == allMeasurements ||
                 (measurementDisplayStatus == validMeasurements &&
-                 !marker.point.depth_erroneous) ||
+                 !marker.point.d_bad) ||
                 (measurementDisplayStatus == badMeasurements &&
-                 marker.point.depth_erroneous)) {
+                 marker.point.d_bad)) {
                 mapForMarker = that.map;
             }
 

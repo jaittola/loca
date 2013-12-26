@@ -26,14 +26,14 @@ def db_depths_fetch(db, coord_range, m_per_pix):
     """
     cur = db_rd_cursor(db)
     cur.execute("SELECT "
-                "p.id as position_id, "
-                "p.trip_id as trip_id,"
+                "p.id as p_id, "
+                "p.trip_id as t_id,"
                 "to_char(p.pos_time_utc, 'YYYYMMDDHH24MISS') "
-                "   as pos_time_utc, "
-                "p.latitude as latitude, "
-                "p.longitude as longitude, "
+                "   as t_utc, "
+                "p.latitude as lat, "
+                "p.longitude as lon, "
                 "d.depth as depth, "
-                "d.erroneous as depth_erroneous "
+                "d.erroneous as d_bad "
                 "FROM position p "
                 "JOIN depth d "
                 "ON p.id = d.position_id "
@@ -58,7 +58,7 @@ def db_triplist_fetch(db, limit=10):
     """
     cur = db_rd_cursor(db)
     cur.execute("SELECT "
-                "t.id AS trip_id, "
+                "t.id AS t_id, "
                 "t.trip_name AS trip_name, "
                 "to_char(t.trip_date, 'YYYY-MM-DD') AS trip_date, "
                 "t.vessel_name AS vessel_name, "
@@ -92,20 +92,20 @@ def db_trip_points_fetch(db,
                       trip_id,
                       m_per_pix)
 
-    query = "SELECT p.id AS position_id, " \
-        "to_char(p.pos_time_utc, 'YYYYMMDDHH24MISS') AS pos_time_utc, " \
-        "p.latitude AS latitude, " \
-        "p.longitude AS longitude, " \
-        "p.erroneous AS pos_erroneous, " \
-        "ws.id AS water_speed_id, " \
-        "ws.speed AS water_speed, " \
-        "gs.id AS ground_speed_id, " \
-        "gs.speed AS ground_speed, " \
-        "gs.course AS course, " \
-        "gs.erroneous AS ground_speed_erroneous " \
+    query = "SELECT p.id AS p_id, " \
+        "to_char(p.pos_time_utc, 'YYYYMMDDHH24MISS') AS t_utc, " \
+        "p.latitude AS lat, " \
+        "p.longitude AS lon, " \
+        "p.erroneous AS pos_bad, " \
+        "wsp.id AS ws_id, " \
+        "wsp.speed AS ws, " \
+        "gsc.id AS gs_id, " \
+        "gsc.speed AS gs, " \
+        "gsc.course AS course, " \
+        "gsc.erroneous AS gs_bad " \
         "FROM position p " \
-        "JOIN water_speed ws ON p.id = ws.position_id " \
-        "JOIN ground_speed_course gs ON p.id = gs.position_id " + \
+        "JOIN water_speed wsp ON p.id = wsp.position_id " \
+        "JOIN ground_speed_course gsc ON p.id = gsc.position_id " + \
         "WHERE " + \
         coord_range_cond + \
         "p.trip_id = %s " \

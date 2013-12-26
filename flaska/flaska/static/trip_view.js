@@ -31,7 +31,7 @@ define(["map_view"], function(MapView) {
                 $("#controls").html("<p>Latest trips:</p> " +
                                     '<form id="latestTripsForm"></form>');
                 $.each(tripData.trips, function(i, trip) {
-                    var tripId = that.encode(trip.trip_id);
+                    var tripId = that.encode(trip.t_id);
                     var tripString =
                         '<input type="checkbox" ' +
                         'id="tripEnabled' + tripId +
@@ -65,7 +65,7 @@ define(["map_view"], function(MapView) {
 
             $.getJSON(path, function(tripData) {
                 $.each(tripData.points, function(i, point) {
-                    if (points.hasOwnProperty(point.position_id)) {
+                    if (points.hasOwnProperty(point.p_id)) {
                         // Skip the ones that we have already.
                         return;
                     }
@@ -73,7 +73,7 @@ define(["map_view"], function(MapView) {
                     point.tripId = tripId;
                     var marker = that.makeMarker(point, "#ff0000");
                     showOnMap(marker);
-                    points[point.position_id] = marker;
+                    points[point.p_id] = marker;
                 });
             });
         };
