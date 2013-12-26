@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+        <link rel="shortcut icon"
+          href="{{ vars.shortcut_icon }}" />
+
+    <link rel="stylesheet"
+          href="{{ vars.css }}"
+          type="text/css" />
+    <title>Update trip info</title>
+  </head>
+  <body>
+    <!-- TODO, nav links and user_info have been copypasted.
+         Move them to a common snippet -->
+    <div id="nav_links">
+      {% if vars.user_email %}
+      <a href="{{ vars.trip_map }}">Latest trips</a>
+      <a href="{{ vars.depth_map }}">Depths</a>
+      <a href="{{ vars.upload_form }}">Upload GPS data</a>
+      {% endif %}
+      &nbsp;
+    </div>
+    <div id="user_info">
+      {% if vars.user_email %}
+      Logged in as {{ vars.user_email }}.
+      <a href="{{ vars.logout }}">Log out</a>
+      {% else %}
+      <a href="{{ vars.login }}">Log in</a>
+      {% endif %}
+    </div>
+
+    {% if success_msg %}
+      <p>{{success_msg}}</p>
+    {% endif %}
+
+    {% if error_msg %}
+      <p class="error">{{error_msg}}</p>
+    {% endif %}
+
+    <form id="update_form" method="POST" enctype="multipart/form-data">
+      {{ form.csrf_token }}
+
+      {% macro field_error(field) %}
+        <td class="error">
+        {% if field.errors %}
+            {% for error in field.errors %}
+               {{ error }} <br>
+            {% endfor %}
+        {% endif %}
+        </td>
+      {% endmacro %}
+
+      <table id="upload_form_tab">
+        <tr>
+          <td>{{ form.trip_name.label }}</td>
+          <td>{{ form.trip_name }}</td>
+          {{ field_error(form.trip_name) }}
+        </tr>
+        <tr>
+          <td>{{ form.trip_date.label }}</td>
+          <td>{{ form.trip_date }}</td>
+          {{ field_error(form.trip_date) }}
+        </tr>
+        <tr>
+          <td>{{ form.vessel_name.label }}</td>
+          <td>{{ form.vessel_name }}</td>
+          {{ field_error(form.vessel_name) }}
+        </tr>
+        <td>
+          <td colspan="2">
+            <input type="submit" value="Update">
+          </td>
+      </table>
+    </form>
+  </body>
+</html>

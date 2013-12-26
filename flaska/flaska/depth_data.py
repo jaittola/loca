@@ -5,6 +5,16 @@ import psycopg2.extras
 # This file contains postgresql-specific database code.
 # Web server specific code should not end up in this file.
 
+trip_data_stmt_base = "SELECT " \
+"t.id AS t_id, " \
+"t.trip_name AS trip_name, " \
+"to_char(t.trip_date, 'YYYY-MM-DD') AS trip_date, " \
+"t.vessel_name AS vessel_name, " \
+"u.user_email AS user_email " \
+"FROM trip t " \
+"JOIN users u " \
+"ON t.user_id = u.id "
+
 def db_connect_string(dbname, dbuser, dbpasswd):
     """
     Return the DB connection string.
@@ -57,16 +67,8 @@ def db_triplist_fetch(db, limit=10):
     Return most recent first.
     """
     cur = db_rd_cursor(db)
-    cur.execute("SELECT "
-                "t.id AS t_id, "
-                "t.trip_name AS trip_name, "
-                "to_char(t.trip_date, 'YYYY-MM-DD') AS trip_date, "
-                "t.vessel_name AS vessel_name, "
-                "u.user_email AS user_email "
-                "FROM trip t "
-                "JOIN users u "
-                "ON t.user_id = u.id "
-                "ORDER BY t.trip_date DESC "
+    cur.execute(trip_data_stmt_base +
+                "ORDER BY t.trip_date DESC " \
                 "LIMIT %s",
                 (limit, ))
     trips = cur.fetchall()
@@ -118,6 +120,37 @@ def db_trip_points_fetch(db,
     cur.close()
 
     return points;
+
+def db_trip_info_fetch(db, trip_id):
+    """Fetch info for one trip from the database."""
+
+    cur = db_rd_cursor(db)
+    cur.execute(trip_data_stmt_base +
+                "WHERE t.id = %s",
+                (trip_id, ))
+    trip_info = cur.fetchone()
+
+    db.commit()
+    cur.close()
+
+    return trip_info
+
+def db_trip_info_update(db, trip_id, trip_name, trip_date, vessel_name):
+    """Update trip info."""
+    result = True
+    cur = db.cursor()
+    cur.execute("UPDATE trip SET "
+                "trip_name = %s, "
+                "trip_date = %s, "
+                "vessel_name = %s "
+                "WHERE id = %s",
+                (trip_name, trip_date, vessel_name, trip_id))
+    result = True if cur.rowcount == 1 else False
+
+    db.commit()
+    cur.close()
+
+    return result
 
 def db_update_validityflags(db, position_id, depth_erroneous):
     result = True

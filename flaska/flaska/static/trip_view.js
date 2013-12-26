@@ -32,19 +32,35 @@ define(["map_view"], function(MapView) {
                                     '<form id="latestTripsForm"></form>');
                 $.each(tripData.trips, function(i, trip) {
                     var tripId = that.encode(trip.t_id);
+                    var checkboxId = "tripEnabled" + tripId;
+                    var divId = "d_" + checkboxId;
+                    var editId = "e_" + checkboxId;
                     var tripString =
-                        '<input type="checkbox" ' +
-                        'id="tripEnabled' + tripId +
-                        '" value="' + tripId + '">' +
-                        that.encode(trip.vessel_name) + " " +
-                        that.encode(trip.trip_date) + " " +
-                        that.encode(trip.trip_name) +
-                        "<br>";
+                        '<div id="' + divId + '">' +
+                        tripVisibilityCheckbox(checkboxId, tripId) +
+                        tripEditLink(tripId, trip) +
+                        "</div>";
                     $("#latestTripsForm").append(tripString);
-                    $("#tripEnabled" + tripId)
+                    $("#" + checkboxId)
                         .click(tripDisplayCallback);
+                    $("#" + editId)
+                        .click(tripEditCallback);
                 });
             });
+        }
+
+        var tripVisibilityCheckbox = function(checkboxId, tripId) {
+            return '<input type="checkbox" ' +
+                'id="' + checkboxId + '"' +
+                '" value="' + tripId + '">';
+        }
+
+        var tripEditLink = function(tripId, trip) {
+            return '<a href="/update/' + tripId + '">' +
+                that.encode(trip.vessel_name) + " " +
+                that.encode(trip.trip_date) + " " +
+                that.encode(trip.trip_name) +
+                "</a>";
         }
 
 	var tripDisplayCallback = function(ev) {
@@ -56,6 +72,20 @@ define(["map_view"], function(MapView) {
             else {
                 dropTrip(tripId);
             }
+        }
+
+        var tripEditCallback = function(ev) {
+            ev.preventDefault();
+            console.log("Trip edit callback " + ev.currentTarget.id);
+            var usIndex = ev.currentTarget.id.indexOf("_");
+            var tripId = parseInt(ev.currentTarget.id.substring(0, usIndex));
+            if (tripId >= 0) {
+                showTripEdit(ev.currentTarget, tripId);
+            }
+        }
+
+        var showTripEdit = function(element, tripId) {
+            var editForm = "";
         }
 
         var downloadAndShow = function(tripId) {
