@@ -14,7 +14,7 @@
          Move them to a common snippet -->
     <div id="nav_links">
       {% if vars.user_email %}
-      <a href="{{ vars.trip_map }}">Latest trips</a>
+      <a href="{{ vars.trip_map }}">Trips</a>
       <a href="{{ vars.depth_map }}">Depths</a>
       <a href="{{ vars.upload_form }}">Upload GPS data</a>
       {% endif %}
@@ -53,17 +53,17 @@
       <table id="upload_form_tab">
         <tr>
           <td>{{ form.trip_name.label }}</td>
-          <td>{{ form.trip_name }}</td>
+          <td>{{ form.trip_name(class="trip_text") }}</td>
           {{ field_error(form.trip_name) }}
         </tr>
         <tr>
           <td>{{ form.trip_date.label }}</td>
-          <td>{{ form.trip_date }}</td>
+          <td>{{ form.trip_date(class="trip_text") }}</td>
           {{ field_error(form.trip_date) }}
         </tr>
         <tr>
           <td>{{ form.vessel_name.label }}</td>
-          <td>{{ form.vessel_name }}</td>
+          <td>{{ form.vessel_name(class="trip_text") }}</td>
           {{ field_error(form.vessel_name) }}
         </tr>
         <td>

@@ -28,7 +28,7 @@ define(["map_view"], function(MapView) {
         // Fetch the list of trips from the server and show it.
         var loadTrips = function() {
             $.getJSON("/api/1/trip/", function(tripData) {
-                $("#controls").html("<p>Latest trips:</p> " +
+                $("#controls").html("<p>Trips:</p> " +
                                     '<form id="latestTripsForm"></form>');
                 $.each(tripData.trips, function(i, trip) {
                     var tripId = that.encode(trip.t_id);

@@ -68,9 +68,10 @@ def db_triplist_fetch(db, limit=10):
     """
     cur = db_rd_cursor(db)
     cur.execute(trip_data_stmt_base +
-                "ORDER BY t.trip_date DESC " \
-                "LIMIT %s",
-                (limit, ))
+                "ORDER BY t.trip_date DESC ")
+# \
+#                "LIMIT %s",
+#                (limit, ))
     trips = cur.fetchall()
     db.commit()
     cur.close()
