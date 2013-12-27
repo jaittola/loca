@@ -8,6 +8,7 @@ import sys
 import time
 
 import psycopg2
+import psycopg2.extras
 
 def fl_coord(coordstr, hemisphere, neg_hemisphere, deg_nums=2):
     if len(coordstr) < deg_nums:
@@ -187,7 +188,6 @@ def read_input(db, trip_id, input_info, input):
 
 def fetch_user_id(db, user_email):
     userid_cursor = db.cursor()
-
     userid_cursor.execute("SELECT id FROM users WHERE user_email = %s",
                 (user_email,))
     user_info = userid_cursor.fetchone()
@@ -223,6 +223,67 @@ def printable_filename(input_info):
         return "stdin"
     return input_info.input_file
 
+def augment_args(input_info):
+    if not input_info.trip_date:
+        input_info.trip_date = today()  # Use this as default
+        if 'input_file' in input_info:
+            rm = re.search("([0-9]{4}-[0-9]{2}-[0-9]{2})",
+                           input_info.input_file)
+            if rm:
+                input_info.trip_date = rm.group(1)
+    if not input_info.trip_name:
+        input_info.trip_name = input_info.input_file or "[empty]"
+    return input_info
+
+def a_or_b(a, b):
+    """Return a if it has a value, b otherwise"""
+    return a if a else b
+
+def load_and_update_trip(db, input_info):
+    trip_cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    trip_cursor.execute("SELECT "
+                        "id, user_id, trip_name, trip_date, vessel_name "
+                        "FROM trip "
+                        "WHERE id = %s "
+                        "FOR UPDATE",
+                        (input_info.trip_id, ))
+    trip_data_in_db = trip_cursor.fetchone()
+    if not trip_data_in_db:
+        trip_cursor.close()
+        raise Exception("Trip with id {} not found".format(input_info.trip_id))
+
+    input_info.user_id = trip_data_in_db['user_id']
+    input_info.trip_name = a_or_b(input_info.trip_name,
+                                  trip_data_in_db.get('trip_name'))
+    input_info.trip_date = a_or_b(input_info.trip_date,
+                                  trip_data_in_db.get('trip_date'))
+    input_info.vessel_name = a_or_b(input_info.vessel_name,
+                                    trip_data_in_db.get('vessel_name'))
+    input_info = augment_args(input_info)
+    trip_cursor.execute("UPDATE trip "
+                        "SET "
+                        "trip_name = %s, "
+                        "trip_date = %s, "
+                        "vessel_name = %s, "
+                        "load_time = CURRENT_TIMESTAMP, "
+                        "load_file = %s "
+                        "WHERE id = %s",
+                        (input_info.trip_name,
+                         input_info.trip_date,
+                         input_info.vessel_name,
+                         printable_filename(input_info),
+                         input_info.trip_id))
+    trip_cursor.close()
+
+    # Delete previous data rows
+    trip_data_del_cursor = db.cursor()
+    trip_data_del_cursor.execute("DELETE FROM position "
+                                 "WHERE trip_id = %s",
+                                 (input_info.trip_id, ))
+    trip_data_del_cursor.close()
+
+    return (input_info, input_info.trip_id, input_info.user_id)
+
 def load_data(context, db, input_info, trip_id):
     if input_info.input_file == "-":
         read_input(db, trip_id, input_info, sys.stdin)
@@ -248,9 +309,17 @@ def do_file_loading(db, input_info,
                     context=None,
                     user_id=None):
     context = context or TTYContext()
+    trip_id = -1
 
     try:
-        trip_id = setup_trip(db, input_info, user_id)
+        if input_info.trip_id:
+            context.log("Updating trip information (id {})"
+                        .format(input_info.trip_id))
+            (input_info, trip_id, user_id) = load_and_update_trip(db,
+                                                                  input_info)
+        else:
+            input_info = augment_args(input_info)
+            trip_id = setup_trip(db, input_info, user_id)
         context.log("Loading data from {} ..."
                     .format(printable_filename(input_info)))
         load_data(context, db, input_info, trip_id)
@@ -296,18 +365,6 @@ class AppContext:
 def today():
     return time.strftime("%Y-%m-%d")
 
-def augment_args(input_info):
-    if not input_info.trip_date:
-        input_info.trip_date = today()  # Use this as default
-        if 'input_file' in input_info:
-            rm = re.search("([0-9]{4}-[0-9]{2}-[0-9]{2})",
-                           input_info.input_file)
-            if rm:
-                input_info.trip_date = rm.group(1)
-    if not input_info.trip_name:
-        input_info.trip_name = input_info.input_file or "[empty]"
-    return input_info
-
 def main():
     parser = argparse.ArgumentParser(description="Read NMEA data and write it "
                                      "into database.")
@@ -316,6 +373,9 @@ def main():
                         help="Name of input file. Use - for stdin")
     parser.add_argument('-t', '--date', dest="trip_date",
                         help="The date of this trip")
+    parser.add_argument('-i', '--trip_id', dest="trip_id",
+                        type=int,
+                        help="Trip id for reloading data")
     parser.add_argument('-e', '--email', dest="user_email",
                         help="The e-mail address of the application user",
                         required=True)
@@ -331,8 +391,7 @@ def main():
                         help="Database user name")
     parser.add_argument('-p', '--db-passwd', dest="db_passwd",
                         help="Database password")
-    input_info = augment_args(parser.parse_args())
-
+    input_info = parser.parse_args()
     db = db_conn(input_info.db_name, input_info.db_user, input_info.db_passwd)
     if db is None:
         sys.stderr.write("Connecting to database failed.\n")
