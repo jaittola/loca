@@ -60,11 +60,15 @@ def writeout_depth(db, position_id, input_info, fields):
         # We need a coordinate value before a depth can be inserted.
         return
 
+    if len(fields[3]) < 1 or len(fields[4]) < 1:
+        # Empty values. Data can be missing.
+        return
+
     depth = float(fields[3])
     unit = fields[4]
 
     if unit != 'M':
-        pass
+        return
 
     depth_cursor = db.cursor()
     depth_cursor.execute("INSERT INTO depth "
@@ -211,6 +215,11 @@ def setup_trip(db, input_info, user_id=None):
         raise Exception("Inserting trip info failed")
     return trip_data[0]
 
+def printable_filename(input_info):
+    if input_info.input_file == "-":
+        return "stdin"
+    return input_info.input_file
+
 def load_data(context, db, input_info, trip_id):
     if input_info.input_file == "-":
         read_input(db, trip_id, input_info, sys.stdin)
@@ -239,7 +248,8 @@ def do_file_loading(db, input_info,
 
     try:
         trip_id = setup_trip(db, input_info, user_id)
-        context.log("Loading data ...")
+        context.log("Loading data from {} ..."
+                    .format(printable_filename(input_info)))
         load_data(context, db, input_info, trip_id)
         db.commit()
         context.log("Loaded. Now performing display range modifications ...")
