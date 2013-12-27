@@ -153,6 +153,7 @@ def writeout_cog_and_sog(db, position_id, fields):
 
 def read_input(db, trip_id, input_info, input):
     linenum = 0
+    positions_ok = 0
     position_id = -1
 
     try:
@@ -164,6 +165,8 @@ def read_input(db, trip_id, input_info, input):
 
             if fields[0] == "$GPGLL":  # Lat/lon
                 position_id = writeout_coords(db, trip_id, input_info, fields)
+                if position_id != -1:
+                    positions_ok += 1
             elif fields[0] == "$IIDBT": # Depth below transducer
                 writeout_depth(db, position_id, input_info, fields)
             elif fields[0] == "$IIMWV": # Wind speed and angle
@@ -177,7 +180,7 @@ def read_input(db, trip_id, input_info, input):
         raise Exception("Failure on line {0} of the input file: {1}"
                         .format(linenum, ex));
 
-    if -1 == position_id:
+    if 0 == positions_ok:
         # No valid positions found: fail so that everything (including
         # the metadata) gets rolled back.
         raise Exception("No valid data rows found")
