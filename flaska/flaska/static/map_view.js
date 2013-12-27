@@ -96,18 +96,18 @@ define(function() {
             var marker = new google.maps.Marker({
                 position: new google.maps.LatLng(point.lat,
                                                  point.lon),
-                flat: true,
                 visible: true,
-                icon: {fillColor: color,
-                       fillOpacity: 1.0,
-                       path: google.maps.SymbolPath.CIRCLE,
-                       strokeColor: color}
+                icon: markerPath(color)
             });
             marker.point = point;
             that.setupMarkerInfoWindow(marker);
 
             return marker;
         };
+
+        var markerPath = function(color) {
+            return "/static/i-1-" + color.substring(1) + ".png";
+        }
 
         // Sets up an event lister for each marker so that clicking brings
         // up an info window with data about the marker.
