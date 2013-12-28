@@ -1,34 +1,11 @@
 <!DOCTYPE html>
 <html>
   <head>
-        <link rel="shortcut icon"
-          href="{{ vars.shortcut_icon }}" />
-
-    <link rel="stylesheet"
-          href="{{ vars.css }}"
-          type="text/css" />
+    {% include 'style_and_favico.html' %}
     <title>Update trip info</title>
   </head>
   <body>
-    <!-- TODO, nav links and user_info have been copypasted.
-         Move them to a common snippet -->
-    <div id="nav_links">
-      {% if vars.user_email %}
-      <a href="{{ vars.trip_map }}">Trips</a>
-      <a href="{{ vars.depth_map }}">Depths</a>
-      <a href="{{ vars.upload_form }}">Upload GPS data</a>
-      {% endif %}
-      &nbsp;
-    </div>
-    <div id="user_info">
-      {% if vars.user_email %}
-      Logged in as {{ vars.user_email }}.
-      <a href="{{ vars.logout }}">Log out</a>
-      {% else %}
-      <a href="{{ vars.login }}">Log in</a>
-      {% endif %}
-    </div>
-
+    {% include 'header.html' %}
     {% if success_msg %}
       <p>{{success_msg}}</p>
     {% endif %}

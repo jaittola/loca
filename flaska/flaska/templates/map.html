@@ -41,24 +41,7 @@
     </script>
   </head>
   <body>
-    <!-- TODO, nav links and user_info have been copypasted.
-         Move them to a common snippet -->
-    <div id="nav_links">
-      {% if vars.user_email %}
-      <a href="{{ vars.trip_map }}">Trips</a>
-      <a href="{{ vars.depth_map }}">Depths</a>
-      <a href="{{ vars.upload_form }}">Upload GPS data</a>
-      {% endif %}
-      &nbsp;
-    </div>
-    <div id="user_info">
-      {% if vars.user_email %}
-      Logged in as {{ vars.user_email }}.
-      <a href="{{ vars.logout }}">Log out</a>
-      {% else %}
-      <a href="{{ vars.login }}">Log in</a>
-      {% endif %}
-    </div>
+    {% include 'header.html' %}
     <div id="map_canvas"> </div>
     <div id="legend"> </div>
     <div id="controls"> </div>
