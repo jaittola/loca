@@ -88,9 +88,6 @@ define(['./hsv2rgb'], function(hsv2rgb) {
                                                                 endHue2),
                                                     sat, value));
             }
-
-            for (var j = 0; j < maxDepth; ++j)
-                console.log(depthGradient[j]);
         };
 
         var depthLegendId = function(cell) {
