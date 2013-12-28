@@ -1,7 +1,8 @@
 /**
  * A map that shows depth measurements.
  */
-define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
+define(["map_view", "depth_gradient", "depth_histogram"],
+       function(MapView, DepthGradient, DepthHistogram) {
     'use strict';
 
     function DepthView() {
@@ -21,6 +22,7 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
 
         // The gradient colors to use
         var gradient = new DepthGradient();
+        var histogram = new DepthHistogram();
 
         var validDepthCheckboxName = "validDepthCheckBox";
 
@@ -115,6 +117,8 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
 
                     depthMarkers[point.p_id] = marker;
                 });
+
+                histogram.setDepths(depthMarkers)
             });
         };
 

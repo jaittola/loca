@@ -12,6 +12,9 @@ body { height: 100%; margin: 1%; padding: 0 }
           margin-left: auto;
           margin-right: auto;
           clear: both; }
+#graph { margin-left: auto;
+         margin-right: auto;
+         clear: both; }
 #measurement_selector { width: 40em;
                         margin-left: auto;
                         margin-right: auto;
@@ -26,3 +29,25 @@ body { height: 100%; margin: 1%; padding: 0 }
              text-align: right;
              margin: 3px; }
 /* Look at clearfix */
+
+/* Histogram */
+.bar rect {
+  fill: steelblue;
+  shape-rendering: crispEdges;
+}
+.bar text {
+  fill: #fff;
+}
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+.label {
+  font-size: 11px;
+  font-family: "sans-serif";
+}
+.img_text {
+    margin-top: 0px;
+    text-align: center;
+}
