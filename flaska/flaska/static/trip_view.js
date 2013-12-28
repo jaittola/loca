@@ -14,13 +14,18 @@ define(["map_view"], function(MapView) {
         var tripsInView = {};
 
         // Re-implemented from the base class.
-        that.update = function() {
-            that.dropPointsOutsideBounds(points);
+        that.update = function(oldZoom, newZoom) {
+            if (that.zoomBoundaryCrossed(oldZoom, newZoom)) {
+                that.dropAllPoints(points);
+            }
+            else {
+                that.dropPointsOutsideBounds(points);
+            }
 
             for (var tripId in tripsInView) {
                 if (tripsInView.hasOwnProperty(tripId) &&
                     tripsInView[tripId] === true) {
-                    downloadAndShow(tripId);
+                    downloadAndShow(tripId, newZoom);
                 }
             }
         }
@@ -88,7 +93,7 @@ define(["map_view"], function(MapView) {
             var editForm = "";
         }
 
-        var downloadAndShow = function(tripId) {
+        var downloadAndShow = function(tripId, zoom) {
             var path = "/api/1/trip/" +
                 that.encode(tripId) +
                 that.getMapParams();
@@ -101,7 +106,7 @@ define(["map_view"], function(MapView) {
                     }
 
                     point.tripId = tripId;
-                    var marker = that.makeMarker(point, "#ff0000");
+                    var marker = that.makeMarker(point, "#ff0000", zoom);
                     showOnMap(marker);
                     points[point.p_id] = marker;
                 });

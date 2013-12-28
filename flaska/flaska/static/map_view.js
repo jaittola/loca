@@ -19,6 +19,9 @@ define(function() {
             centerLon = cookie.lon;
         }
 
+        // Zoom boundary for larger marker icons
+        that.zoomBoundary = 18;
+
         // The actual map.
         that.map = new google.maps.Map(document.getElementById("map_canvas"),
                                        { zoom: zoom,
@@ -43,22 +46,46 @@ define(function() {
         that.dropPointsOutsideBounds = function(points) {
             for (var posId in points) {
                 if (points.hasOwnProperty(posId)) {
-                    var point = points[posId];
-                    if (!that.isInView(point.point)) {
-                        point.setMap(null);
+                    if (!that.isInView(points[posId].point)) {
+                        points[posId].setMap(null);
                         delete points[posId];
                     }
                 }
             }
         };
 
+        // Utiilty to drop all points from the map.
+        that.dropAllPoints  = function(points) {
+            for (var posId in points) {
+                if (points.hasOwnProperty(posId)) {
+                    points[posId].setMap(null);
+                    delete points[posId];
+                }
+            }
+        };
+
+        // Returns true if the map zoom level change
+        // crossed the zoom boundary, false otherwise.
+        // The zoom boundary can be utilized to change map marker
+        // sizes (or other properties) according to the zoom level.
+        that.zoomBoundaryCrossed = function(oldZoom, newZoom) {
+            if ((oldZoom >= that.zoomBoundary &&
+                 newZoom < that.zoomBoundary) ||
+                (oldZoom < that.zoomBoundary &&
+                 newZoom >= that.zoomBoundary)) {
+                return true;
+            }
+            return false;
+        };
+
         // Called when the viewport of the map changes because of
         // panning or zooming. Updates the current position into a
         // cookie, and calls the update function.
         var viewChanged = function() {
-            var centerLat = that.map.center.lat();
-            var centerLon = that.map.center.lng();
-            var zoom = that.map.zoom;
+            centerLat = that.map.center.lat();
+            centerLon = that.map.center.lng();
+            var oldZoom = zoom;
+            zoom = that.map.zoom;
 
             $.cookie('map_pos',
                      { lat: centerLat,
@@ -67,7 +94,7 @@ define(function() {
                      { path: "/",
                        expires: 365 })
 
-            that.update();
+            that.update(oldZoom, zoom);
         }
 
         // Utility for HTML encoding.
@@ -92,12 +119,12 @@ define(function() {
         };
 
         // Make a marker at the specified position and color.
-        that.makeMarker = function(point, color) {
+        that.makeMarker = function(point, color, zoom) {
             var marker = new google.maps.Marker({
                 position: new google.maps.LatLng(point.lat,
                                                  point.lon),
                 visible: true,
-                icon: markerPath(color)
+                icon: markerPath(color, that, zoom)
             });
             marker.point = point;
             that.setupMarkerInfoWindow(marker);
@@ -105,8 +132,10 @@ define(function() {
             return marker;
         };
 
-        var markerPath = function(color) {
-            return "/static/i-31-" + color.substring(1) + ".png";
+        var markerPath = function(color, map, zoom) {
+            return "/static/i-" +
+                (zoom >= map.zoomBoundary ? "32" : "31") +
+                "-" + color.substring(1) + ".png";
         }
 
         // Sets up an event lister for each marker so that clicking brings

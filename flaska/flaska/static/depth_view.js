@@ -91,8 +91,13 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
 
         // Load the depth data. This is the main function herein. This
         // function gets called whenever the map is zoomed or panned.
-        that.update = function() {
-            that.dropPointsOutsideBounds(depthMarkers);
+        that.update = function(oldZoom, newZoom) {
+            if (that.zoomBoundaryCrossed(oldZoom, newZoom)) {
+                that.dropAllPoints(depthMarkers);
+            }
+            else {
+                that.dropPointsOutsideBounds(depthMarkers);
+            }
 
             var path = "/api/1/depth_data/" +
                 that.getMapParams();
@@ -105,7 +110,7 @@ define(["map_view", "depth_gradient"], function(MapView, DepthGradient) {
                     }
 
                     var color = gradient.color(point.depth);
-                    var marker = that.makeMarker(point, color);
+                    var marker = that.makeMarker(point, color, newZoom);
                     setToMap(marker);
 
                     depthMarkers[point.p_id] = marker;
