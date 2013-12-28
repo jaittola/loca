@@ -133,7 +133,7 @@ define(function() {
         };
 
         var markerPath = function(color, map, zoom) {
-            return "/static/i-" +
+            return "/static/icons/i-" +
                 (zoom >= map.zoomBoundary ? "32" : "31") +
                 "-" + color.substring(1) + ".png";
         }
