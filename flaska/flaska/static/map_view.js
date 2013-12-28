@@ -106,7 +106,7 @@ define(function() {
         };
 
         var markerPath = function(color) {
-            return "/static/i-1-" + color.substring(1) + ".png";
+            return "/static/i-31-" + color.substring(1) + ".png";
         }
 
         // Sets up an event lister for each marker so that clicking brings
