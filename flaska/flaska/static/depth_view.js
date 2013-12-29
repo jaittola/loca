@@ -22,7 +22,7 @@ define(["map_view", "depth_gradient", "depth_histogram"],
 
         // The gradient colors to use
         var gradient = new DepthGradient();
-        var histogram = new DepthHistogram();
+        var histogram = new DepthHistogram(gradient);
 
         var validDepthCheckboxName = "validDepthCheckBox";
 
@@ -118,7 +118,7 @@ define(["map_view", "depth_gradient", "depth_histogram"],
                     depthMarkers[point.p_id] = marker;
                 });
 
-                histogram.setDepths(depthMarkers)
+                histogram.setDepths(depthMarkers, measurementDisplayStatus);
             });
         };
 
@@ -159,6 +159,7 @@ define(["map_view", "depth_gradient", "depth_histogram"],
                     setToMap(marker);
                 }
             }
+            histogram.setDepths(depthMarkers, measurementDisplayStatus);
         }
 
         var setupControlPanel = function() {

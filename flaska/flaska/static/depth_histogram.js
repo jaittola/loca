@@ -4,37 +4,70 @@
 define(function() {
     'use strict';
 
-    var DepthHistogram = function() {
+    var DepthHistogram = function(gradient) {
         var that = {};
-        var depths = []
+        var depths = [];
+        var maxDepth = 0;
+        var depthGradient = gradient;
 
-        that.setDepths = function(depthMeasurements) {
+        var margin = {top: 10, right: 40, bottom: 25, left: 10};
+        var width = 640 - margin.left - margin.right;
+        var height = 440 - margin.top - margin.bottom;
+
+        // Constants. Copy-pasta, to be removed.
+        var allMeasurements = 0;
+        var validMeasurements = 1;
+        var badMeasurements = 2;
+
+        that.setDepths = function(depthMeasurements, measurementsToShow) {
+            measurementsToShow = measurementsToShow || allMeasurements;
+
             depths = [];
+            maxDepth = 0;
+
             for (var dm in depthMeasurements) {
                 if (depthMeasurements.hasOwnProperty(dm)) {
-                    depths.push(Math.ceil(depthMeasurements[dm].point.depth));
+                    var depth = Math.ceil(depthMeasurements[dm].point.depth);
+
+                    if (allMeasurements == measurementsToShow ||
+                        (badMeasurements == measurementsToShow &&
+                         depthMeasurements[dm].point.d_bad) ||
+                        (validMeasurements == measurementsToShow &&
+                         !depthMeasurements[dm].point.d_bad)) {
+                        addDepthMeasurement(depth);
+                    }
                 }
             }
+
             d3.select("#graph").html("");
-            that.createHistogram();
+            createHistogram();
+
+            // Add a label for the whole graph
+            var label = d3.select("#graph").append("p")
+                .attr("class", "img_text");
+            label.html("Distribution of depths");
+
+            // Fix the width of the graph element that encloses the histogram.
+            $("#graph").css({"width": (width + margin.left + margin.right) + "px" })
         }
 
-        that.createHistogram = function() {
+        var addDepthMeasurement = function(depth) {
+            depths.push(depth);
+            maxDepth = Math.max(maxDepth, depth);
+        }
+
+        var createHistogram = function() {
             // Formatters for counts and times (converting numbers to Dates).
             var formatCount = d3.format(".0f");
             var formatDepth = d3.format(".0f");
 
-            var margin = {top: 10, right: 40, bottom: 25, left: 10},
-            width = 640 - margin.left - margin.right,
-            height = 440 - margin.top - margin.bottom;
-
             var x = d3.scale.linear()
-                .domain([0, 40])
+                .domain([0, maxDepth])
                 .range([0, width]);
 
             // Generate a histogram using twenty uniformly-spaced bins.
             var data = d3.layout.histogram()
-                .bins(x.ticks(20))(depths);
+                .bins(x.ticks(Math.floor(maxDepth / 2)))(depths);
 
             var y = d3.scale.linear()
                 .domain([0, d3.max(data, function(d) { return d.y; })])
@@ -70,6 +103,7 @@ define(function() {
                 .attr("y", 6)
                 .attr("x", x(data[0].dx) / 2)
                 .attr("text-anchor", "middle")
+                .attr("writing-mode", "tb")
                 .text(function(d) { return formatCount(d.y); });
 
             svg.append("g")
@@ -84,14 +118,6 @@ define(function() {
                 .attr("x", width)
                 .attr("y", height - 6)
                 .text("Depth (m)");
-
-            // Add a label for the whole graph
-            var label = d3.select("#graph").append("p")
-                .attr("class", "img_text");
-            label.html("Distribution of depths");
-
-            // Fix the width of the enclosing graph element.
-            $("#graph").css({"width": (width + margin.left + margin.right) + "px" })
         }
 
         return that;
