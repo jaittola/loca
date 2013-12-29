@@ -45,7 +45,7 @@ define(function() {
             // Add a label for the whole graph
             var label = d3.select("#graph").append("p")
                 .attr("class", "img_text");
-            label.html("Distribution of depths");
+            label.html("Distribution of depth measuremens in this view");
 
             // Fix the width of the graph element that encloses the histogram.
             $("#graph").css({"width": (width + margin.left + margin.right) + "px" })
@@ -95,7 +95,8 @@ define(function() {
             bar.append("rect")
                 .attr("x", 1)
                 .attr("width", x(data[0].dx) - 1)
-                .attr("height", function(d) { return height - y(d.y); });
+                .attr("height", function(d) { return height - y(d.y); })
+                .attr("fill", function(d) { return depthGradient.color(d.x); });
 
             bar.append("text")
                 .attr("class", "label")
