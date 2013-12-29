@@ -57,7 +57,7 @@ define(function() {
         }
 
         var createHistogram = function() {
-            // Formatters for counts and times (converting numbers to Dates).
+            // Formatters for counts and depths
             var formatCount = d3.format(".0f");
             var formatDepth = d3.format(".0f");
 
@@ -65,7 +65,7 @@ define(function() {
                 .domain([0, maxDepth])
                 .range([0, width]);
 
-            // Generate a histogram using twenty uniformly-spaced bins.
+            // Generate a histogram using uniformly-spaced bins.
             var data = d3.layout.histogram()
                 .bins(x.ticks(Math.floor(maxDepth / 2)))(depths);
 
