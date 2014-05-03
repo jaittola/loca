@@ -42,6 +42,7 @@ class InputInfo:
                  trip_name,
                  trip_date,
                  vessel_name):
+        self.trip_id = 0
         self.user_email = user_email
         self.input_file = input_file
         self.trip_name = trip_name
