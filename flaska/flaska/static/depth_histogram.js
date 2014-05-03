@@ -5,19 +5,26 @@ define(function() {
     'use strict';
 
     var DepthHistogram = function(gradient) {
-        var that = {};
+        var that = {
+            totalWidth: 430,
+            visible: true
+        };
         var depths = [];
         var maxDepth = 0;
         var depthGradient = gradient;
 
-        var margin = {top: 10, right: 40, bottom: 25, left: 10};
-        var width = 640 - margin.left - margin.right;
+        var margin = {top: 10, right: 20, bottom: 25, left: 10};
+
         var height = 440 - margin.top - margin.bottom;
 
         // Constants. Copy-pasta, to be removed.
         var allMeasurements = 0;
         var validMeasurements = 1;
         var badMeasurements = 2;
+
+        function actualWidth() {
+            return that.totalWidth - margin.left - margin.right;
+        }
 
         that.setDepths = function(depthMeasurements, measurementsToShow) {
             measurementsToShow = measurementsToShow || allMeasurements;
@@ -39,7 +46,15 @@ define(function() {
                 }
             }
 
+            that.showHistogram();
+        }
+
+        that.showHistogram = function() {
             d3.select("#graph").html("");
+            if (!that.visible) {
+                return;
+            }
+
             createHistogram();
 
             // Add a label for the whole graph
@@ -48,7 +63,7 @@ define(function() {
             label.html("Distribution of depth measuremens in this view");
 
             // Fix the width of the graph element that encloses the histogram.
-            $("#graph").css({"width": (width + margin.left + margin.right) + "px" })
+            $("#graph").css({"width": (actualWidth() + margin.left + margin.right) + "px" })
         }
 
         var addDepthMeasurement = function(depth) {
@@ -63,7 +78,7 @@ define(function() {
 
             var x = d3.scale.linear()
                 .domain([0, maxDepth])
-                .range([0, width]);
+                .range([0, actualWidth()]);
 
             // Generate a histogram using uniformly-spaced bins.
             var data = d3.layout.histogram()
@@ -80,7 +95,7 @@ define(function() {
 
             var svg = d3.select("#graph").append("svg")
                 .attr("class", "histogram")
-                .attr("width", width + margin.left + margin.right)
+                .attr("width", actualWidth() + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom)
                 .append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -116,8 +131,9 @@ define(function() {
             svg.append("text")
                 .attr("class", "label")
                 .attr("text-anchor", "end")
-                .attr("x", width)
-                .attr("y", height - 6)
+                .attr("x", actualWidth() + margin.left)
+                .attr("y", height + margin.top + margin.bottom)
+                .attr("writing-mode", "tb")
                 .text("Depth (m)");
         }
 

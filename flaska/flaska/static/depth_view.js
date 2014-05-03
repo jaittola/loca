@@ -129,7 +129,7 @@ define(["map_view", "depth_gradient", "depth_histogram"],
                          depth_erroneous: point.d_bad }),
                      dataType: "json",
                      contentType: "application/json; charset=utf-8",
-                     success: reFilterMeasurements,
+                     success: reFilterMeasurements
                      });
             // TODO, error handling.
         };
@@ -169,10 +169,42 @@ define(["map_view", "depth_gradient", "depth_histogram"],
                     measurementDisplayStatus =
                         $('.measurement_selector_radio:checked').val();
                     reFilterMeasurements();
+
                 });
+                setupHistogramActiveBinding();
             });
         };
 
+        var setupViewSize = function() {
+            var w = ($("#toplevel").width() - histogram.totalWidth - 2);
+            if (w <= 0 || !histogram.visible) {
+                setHistogramVisible(false);
+                w = $("#toplevel").width();
+            }
+            $("#map_canvas").css({ "width": w + "px"});
+        }
+
+        var setupWindowResizeHandler = function() {
+            $(window).resize(function() {
+                setupViewSize();
+            });
+        }
+
+        var setHistogramVisible = function(visible) {
+            histogram.visible = visible;
+            $("#histogramVisible").prop("checked", visible);
+        }
+
+        function setupHistogramActiveBinding() {
+            $("#histogramVisible").click(function() {
+                histogram.visible = this.checked;
+                setupViewSize();
+                histogram.showHistogram();
+            });
+        }
+
+        setupViewSize();
+        setupWindowResizeHandler();
         setupControlPanel();
 
         return that;
