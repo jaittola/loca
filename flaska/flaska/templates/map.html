@@ -33,6 +33,7 @@
       $.cookie.json = true;
 
       var mapsKey = "{{ vars.maps_key }}";
+      var globalVars = { userEmail: "{{ vars.user_email if vars.user_email else "" }}" };
       var viewName = "{{viewName}}";
       window.onload = loadMap;
     </script>

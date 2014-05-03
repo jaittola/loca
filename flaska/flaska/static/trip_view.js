@@ -61,11 +61,20 @@ define(["map_view"], function(MapView) {
         }
 
         var tripEditLink = function(tripId, trip) {
-            return '<a href="/update/' + tripId + '">' +
-                that.encode(trip.vessel_name) + " " +
-                that.encode(trip.trip_date) + " " +
-                that.encode(trip.trip_name) +
-                "</a>";
+            function tripInfo() {
+                return that.encode(trip.vessel_name) + " " +
+                    that.encode(trip.trip_date) + " " +
+                    that.encode(trip.trip_name);
+            }
+
+            if (globalVars.userEmail) {
+                return '<a href="/update/' + tripId + '">' +
+                    tripInfo() +
+                    "</a>";
+            }
+            else {
+                return tripInfo();
+            }
         }
 
 	var tripDisplayCallback = function(ev) {
