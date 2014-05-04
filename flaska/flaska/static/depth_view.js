@@ -22,7 +22,7 @@ define(["map_view", "depth_gradient", "depth_histogram"],
 
         // The gradient colors to use
         var gradient = new DepthGradient();
-        var histogram = new DepthHistogram(gradient);
+        var histogram = new DepthHistogram(gradient, "#graph");
 
         var validDepthCheckboxName = "validDepthCheckBox";
 
@@ -181,7 +181,7 @@ define(["map_view", "depth_gradient", "depth_histogram"],
                 setHistogramVisible(false);
                 w = $("#toplevel").width();
             }
-            $("#map_canvas").css({ "width": w + "px"});
+            $("#map_canvas").width(w);
         }
 
         var setupWindowResizeHandler = function() {

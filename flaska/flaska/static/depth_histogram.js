@@ -4,7 +4,7 @@
 define(function() {
     'use strict';
 
-    var DepthHistogram = function(gradient) {
+    var DepthHistogram = function(gradient, htmlElement) {
         var that = {
             totalWidth: 430,
             visible: true
@@ -13,8 +13,8 @@ define(function() {
         var maxDepth = 0;
         var depthGradient = gradient;
 
+        var graphElement = htmlElement;
         var margin = {top: 10, right: 20, bottom: 25, left: 10};
-
         var height = 440 - margin.top - margin.bottom;
 
         // Constants. Copy-pasta, to be removed.
@@ -50,7 +50,7 @@ define(function() {
         }
 
         that.showHistogram = function() {
-            d3.select("#graph").html("");
+            d3.select(graphElement).html("");
             if (!that.visible) {
                 return;
             }
@@ -58,12 +58,12 @@ define(function() {
             createHistogram();
 
             // Add a label for the whole graph
-            var label = d3.select("#graph").append("p")
+            var label = d3.select(graphElement).append("p")
                 .attr("class", "img_text");
             label.html("Distribution of depth measuremens in this view");
 
             // Fix the width of the graph element that encloses the histogram.
-            $("#graph").css({"width": (actualWidth() + margin.left + margin.right) + "px" })
+            $(graphElement).css({"width": (actualWidth() + margin.left + margin.right) + "px" })
         }
 
         var addDepthMeasurement = function(depth) {
@@ -93,7 +93,7 @@ define(function() {
                 .orient("bottom")
                 .tickFormat(formatDepth);
 
-            var svg = d3.select("#graph").append("svg")
+            var svg = d3.select(graphElement).append("svg")
                 .attr("class", "histogram")
                 .attr("width", actualWidth() + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom)
