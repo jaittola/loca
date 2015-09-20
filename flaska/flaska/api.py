@@ -1,7 +1,7 @@
 
 import json
 
-from flask import g, request, Response, abort
+from flask import g, request, Response, abort, stream_with_context
 from flask_login import login_required
 
 from depth_data import db_conn, db_disconn
@@ -13,11 +13,14 @@ from flaska import app
 @login_required
 def depth_data():
     coord_range = fetch_coord_range(mandatory=True)
-    depths = db_depths_fetch(g.db,
-                             coord_range,
-                             request.args.get("mPerPix", default=400,
-                                              type=float))
-    return json_response({ "depths": depths })
+    depth_generator = db_depths_fetch(g.db,
+                                      coord_range,
+                                      request.args.get("mPerPix", default=400,
+                                                       type=float),
+                                      '{"depths":[',
+                                      ']}')
+    return Response(stream_with_context(depth_generator.generate()),
+                    mimetype='application/json')
 
 @app.route("/api/1/trip/<int:trip_id>")
 def trip(trip_id):

@@ -1,6 +1,7 @@
 
 import psycopg2
 import psycopg2.extras
+import json
 
 # This file contains postgresql-specific database code.
 # Web server specific code should not end up in this file.
@@ -30,7 +31,29 @@ def db_disconn(db):
 def db_rd_cursor(db):
     return db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-def db_depths_fetch(db, coord_range, m_per_pix):
+
+class DepthGeneratorContainer:
+    def __init__(self, db, cursor, begin_template, end_template):
+        self.db = db
+        self.cursor = cursor
+        self.begin_template = begin_template
+        self.end_template = end_template
+
+    def close(self):
+        self.db.commit()
+        self.cursor.close()
+
+    def generate(self):
+        yield(self.begin_template)
+        linecount = 0
+        for r in self.cursor:
+            linecount += 1
+            yield "{}{}".format("" if linecount == 1 else ",",
+                                json.dumps(r))
+        self.close()
+        yield(self.end_template)
+
+def db_depths_fetch(db, coord_range, m_per_pix, begin_template, end_template):
     """
     Fetch depth data from the database.
     """
@@ -54,11 +77,7 @@ def db_depths_fetch(db, coord_range, m_per_pix):
                 (coord_range["lat0"], coord_range["lat1"],
                  coord_range["lon0"], coord_range["lon1"],
                  m_per_pix))
-    depths = cur.fetchall()
-    db.commit()
-    cur.close()
-
-    return depths
+    return DepthGeneratorContainer(db, cur, begin_template, end_template)
 
 def db_triplist_fetch(db, limit=10):
     """
