@@ -1,2 +1,6 @@
 demodata/*
-
+goloca/bin/
+goloca/setenv.sh
+goloca/src/goloca/srv/srv
+goloca/src/github.com
+goloca/pkg/
